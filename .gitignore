@@ -5,7 +5,7 @@
 *.sln.docstates
 *.suo
 
-## Build outputs (cover both TechnoMarkt and TechnoMarkt.StressTests)
+## Build outputs
 [Bb]in/
 [Oo]bj/
 TechnoMarkt/bin/
@@ -21,6 +21,7 @@ artifacts/
 ## TechnoMarkt specific folders
 TechnoMarkt/wwwroot/lib/
 TechnoMarkt/wwwroot/backup/
+TechnoMarkt/wwwroot/backups/
 TechnoMarkt/wwwroot/images/
 TechnoMarkt/appsettings.Development.json
 
