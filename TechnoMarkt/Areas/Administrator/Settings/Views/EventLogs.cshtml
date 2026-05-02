@@ -1,0 +1,136 @@
+@model SettingsViewModel
+@{
+    ViewData["Title"] = "Журнал дій";
+    var table = Model.EventLogsTable;
+}
+
+<div class="space-y-6">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-clipboard-list text-3xl text-gray-700"></i>
+            <h1 class="text-3xl font-bold text-gray-900">@ViewData["Title"]</h1>
+        </div>
+        <a asp-action="Index" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors">
+            <i class="fa-solid fa-arrow-left mr-2"></i>Назад
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+        <div class="p-4 border-b border-gray-200 bg-gray-50">
+            <form method="get" asp-action="EventLogs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Роль</label>
+                    <select name="filter.Role" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Всі</option>
+                        @foreach (var opt in table.RoleOptions)
+                        {
+                            <option value="@opt.Value" selected="@(table.Filter?.Role == opt.Value)">@opt.Text</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Дія</label>
+                    <select name="filter.Action" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Всі</option>
+                        @foreach (var opt in table.ActionOptions)
+                        {
+                            <option value="@opt.Value" selected="@(table.Filter?.Action == opt.Value)">@opt.Text</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Сутність</label>
+                    <select name="filter.Entity" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Всі</option>
+                        @foreach (var opt in table.EntityOptions)
+                        {
+                            <option value="@opt.Value" selected="@(table.Filter?.Entity == opt.Value)">@opt.Text</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Користувач</label>
+                    <input type="text" name="filter.SearchUser" value="@table.Filter?.SearchUser" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Email або ім'я..." />
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-filter mr-2"></i>Фільтрувати
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Користувач</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Роль</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Дія</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Сутність</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Опис</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Дата</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var row in table.Rows)
+                    {
+                        var actionColor = row.Action switch
+                        {
+                            "Create" => "bg-green-100 text-green-800",
+                            "Update" => "bg-blue-100 text-blue-800",
+                            "Delete" => "bg-red-100 text-red-800",
+                            "Login" => "bg-purple-100 text-purple-800",
+                            "Logout" => "bg-gray-100 text-gray-800",
+                            "Backup" => "bg-yellow-100 text-yellow-800",
+                            "Restore" => "bg-orange-100 text-orange-800",
+                            _ => "bg-gray-100 text-gray-800"
+                        };
+
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-500 font-mono">@row.LogId</td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">@row.UserFullName</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">@row.Role</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium @actionColor">@row.Action</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">@row.Entity@(row.EntityId.HasValue ? $" #{row.EntityId}" : "")</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="@row.Description">@row.Description</td>
+                            <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">@row.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                    }
+                    @if (!table.Rows.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-400 italic">Записи не знайдено</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (table.TotalPages > 1)
+        {
+            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                <span class="text-sm text-gray-500">Сторінка @table.CurrentPage з @table.TotalPages (всього @table.TotalCount)</span>
+                <nav class="flex gap-1">
+                    @if (table.CurrentPage > 1)
+                    {
+                        <a asp-action="EventLogs" asp-route-currentPage="@(table.CurrentPage - 1)" asp-route-filter="@table.Filter" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">&larr;</a>
+                    }
+                    @if (table.CurrentPage < table.TotalPages)
+                    {
+                        <a asp-action="EventLogs" asp-route-currentPage="@(table.CurrentPage + 1)" asp-route-filter="@table.Filter" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">&rarr;</a>
+                    }
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+

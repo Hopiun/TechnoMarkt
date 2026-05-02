@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — TechnoMarkt</title>
+    <meta name="description" content="TechnoMarkt — найкраща техніка для вашого дому. Понад 5000 товарів у 5 магазинах України." />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy:        '#1A2744',
+                        'navy-dark': '#0F1A36',
+                        'navy-mid':  '#243562',
+                        yellow:      '#FFCC00',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        @@keyframes slideIn {
+            from { opacity: 0; transform: translateX(1rem); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-white text-gray-900 min-h-screen">
+
+@{
+    var headerModel = ViewData["HomeModel"] as HomeViewModel;
+}
+
+<header class="fixed top-0 left-0 w-full h-16 z-50 bg-[#003DA5] border-b border-blue-800 shadow-sm flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <a href="/Home/Home/Index" class="flex items-center gap-2 flex-shrink-0 no-underline">
+                <i class="fa-solid fa-bolt text-[#FFE000] text-xl"></i>
+                <span class="text-xl font-bold tracking-tight text-white">TechnoMarkt</span>
+            </a>
+        </div>
+
+        <div class="flex items-center gap-4">
+            @{
+                string? clientName   = headerModel?.ClientName   ?? ViewData["ClientName"]   as string;
+                string? clientEmail  = headerModel?.ClientEmail  ?? ViewData["ClientEmail"]  as string;
+                string? clientWallet = headerModel?.ClientWallet ?? ViewData["ClientWallet"] as string;
+
+                if (string.IsNullOrEmpty(clientName) && User.Identity?.IsAuthenticated == true && User.IsInRole("Client"))
+                {
+                    clientName = $"{User.FindFirst("LastName")?.Value} {User.FindFirst("FirstName")?.Value}".Trim();
+                    clientEmail = User.Identity.Name;
+                    clientWallet = User.FindFirst("WalletBalance")?.Value ?? "0.00";
+                }
+            }
+
+            @if (!string.IsNullOrEmpty(clientName))
+            {
+                <div class="flex items-center gap-3">
+                    <a href="/Client/Orders/Index" class="flex items-center gap-2 no-underline cursor-pointer group hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors">
+                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 group-hover:bg-white/30 transition-colors">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold leading-none text-white group-hover:text-blue-100 transition-colors">@clientName</p>
+                            <span class="inline-block mt-0.5 px-1.5 py-0 bg-white/20 backdrop-blur-sm rounded text-[10px] font-bold text-white">₴@clientWallet</span>
+                        </div>
+                    </a>
+
+                    @if (ViewData["Title"]?.ToString() != "Головна")
+                    {
+                        <button type="button" onclick="openCartModal()" id="header-cart-btn" class="relative text-white hover:opacity-80 transition-opacity no-underline flex items-center justify-center h-8 w-8 cursor-pointer ml-2">
+                            <i class="fa-solid fa-cart-shopping text-xl"></i>
+                            <span id="header-cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center" style="display: none;">0</span>
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center gap-3">
+                    <a href="/Account/Login" id="btn-login"
+                       class="px-4 py-1.5 bg-[#FFE000] text-black text-xs font-bold rounded-lg hover:brightness-110 transition-all no-underline">Увійти</a>
+                    <a href="/Account/SignUp" id="btn-register"
+                       class="px-4 py-1.5 bg-[#002A80] text-white text-xs font-semibold rounded-lg hover:bg-blue-900 transition-all no-underline border border-blue-700">Реєстрація</a>
+
+                    @if (ViewData["Title"]?.ToString() != "Головна")
+                    {
+                        <button type="button" onclick="openCartModal()" id="header-cart-btn-guest" class="relative text-white hover:opacity-80 transition-opacity no-underline flex items-center justify-center h-8 w-8 ml-2 cursor-pointer">
+                            <i class="fa-solid fa-cart-shopping text-xl"></i>
+                            <span id="header-cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center" style="display: none;">0</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" id="btn-employee"
+                           class="px-3 py-1.5 bg-blue-900/40 text-blue-100 text-xs font-semibold rounded-lg hover:bg-blue-900/60 transition-colors no-underline border border-blue-700/50">
+                            <i class="fa-solid fa-id-badge mr-1"></i>Я працівник
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+</header>
+
+<main class="min-h-[calc(100vh-64px-60px)] pt-16">
+    @Html.AntiForgeryToken()
+
+    @RenderBody()
+</main>
+
+<footer class="bg-[#0F1A36] text-gray-400 text-center py-5 text-sm">
+    <p>© 2025 TechnoMarkt. Всі права захищені.</p>
+</footer>
+
+@await RenderSectionAsync("Scripts", required: false)
+
+<script>
+    let cartItemCount = 0;
+
+    function updateCartBadge(count) {
+        cartItemCount = count;
+        const badge = document.getElementById('header-cart-badge');
+        if (badge) {
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = count > 99 ? '99+' : count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    async function loadCartCount() {
+        try {
+            const response = await fetch('/Cart/GetCount', { method: 'GET' });
+            if (response.ok) {
+                const data = await response.json();
+                updateCartBadge(data.count);
+            }
+        } catch (e) {
+            console.error('Failed to load cart count:', e);
+        }
+    }
+
+    async function addToCart(itemId, quantity = 1) {
+        try {
+            const formData = new FormData();
+            formData.append('ItemId', itemId);
+            formData.append('Quantity', quantity);
+            
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                formData.append('__RequestVerificationToken', token.value);
+            }
+
+            const url = '@Url.Action("Add", "Cart", new { area = "" })';
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateCartBadge(data.count);
+                showToast('Товар додано в кошик!', 'success');
+            } else {
+                let errMsg = 'Помилка додавання в кошик';
+                try {
+                    const err = await response.json();
+                    if (err && err.error) errMsg = err.error;
+                } catch {
+                    const rawText = await response.text().catch(() => '');
+                    if (rawText) {
+                        errMsg = `Помилка (${response.status}): ` + rawText.substring(0, 100);
+                    } else {
+                        errMsg = `Статус помилки: ${response.status}`;
+                    }
+                }
+                showToast(errMsg, 'error');
+            }
+        } catch (e) {
+            console.error('Add to cart error:', e);
+            showToast('Помилка виконання запиту: ' + e.message, 'error');
+        }
+    }
+
+    async function submitCartItem(itemId) {
+        const qty = parseInt(document.getElementById('qty-input').value);
+        try {
+            const formData = new FormData();
+            formData.append('ItemId', itemId);
+            formData.append('Quantity', qty);
+            
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                formData.append('__RequestVerificationToken', token.value);
+            }
+
+            const url = '@Url.Action("Add", "Cart", new { area = "" })';
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateCartBadge(data.count);
+                showToast('Товар додано в кошик!', 'success');
+                closeDetailsModal();
+            } else {
+                let errMsg = 'Помилка додавання в кошик';
+                try {
+                    const err = await response.json();
+                    if (err && err.error) errMsg = err.error;
+                } catch {
+                    const rawText = await response.text().catch(() => '');
+                    if (rawText) {
+                        errMsg = `Помилка (${response.status}): ` + rawText.substring(0, 100);
+                    } else {
+                        errMsg = `Статус помилки: ${response.status}`;
+                    }
+                }
+                showToast(errMsg, 'error');
+            }
+        } catch (e) {
+            console.error('Add to cart error:', e);
+            showToast('Помилка виконання запиту: ' + e.message, 'error');
+        }
+    }
+
+    
+    document.addEventListener('DOMContentLoaded', () => loadCartCount());
+
+    async function openCartModal() {
+        let container = document.getElementById('cart-modal-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'cart-modal-container';
+            document.body.appendChild(container);
+        }
+
+        try {
+            const res = await fetch('/Cart/ModalPartial');
+            const html = await res.text();
+            container.innerHTML = html;
+            
+            const overlay = document.getElementById('cart-modal-overlay');
+            const content = document.getElementById('cart-modal-content');
+            
+            
+            void overlay.offsetWidth;
+            
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+        } catch (e) {
+            console.error(e);
+            showToast('Не вдалося завантажити кошик', 'error');
+        }
+    }
+
+    function closeCartModal() {
+        const overlay = document.getElementById('cart-modal-overlay');
+        const content = document.getElementById('cart-modal-content');
+        if (overlay && content) {
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                const container = document.getElementById('cart-modal-container');
+                if (container) container.innerHTML = '';
+            }, 200);
+        }
+    }
+
+    async function removeCartItemFromModal(itemId) {
+        try {
+            const formData = new FormData();
+            formData.append('itemId', itemId);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) formData.append('__RequestVerificationToken', token.value);
+
+            await fetch('/Cart/Remove', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            await loadCartCount();
+            await openCartModal(); 
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    async function clearCartFromModal() {
+        try {
+            const formData = new FormData();
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) formData.append('__RequestVerificationToken', token.value);
+
+            await fetch('/Cart/Clear', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            await loadCartCount();
+            await openCartModal();
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    function dismissToast(btn) {
+        const toast = btn.closest('.toast-item');
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(1rem)';
+        toast.style.transition = 'all 0.2s ease-in';
+        setTimeout(() => toast.remove(), 200);
+    }
+
+    function showToast(message, type = 'success') {
+        const config = {
+            success: { bg: 'bg-green-950/90', border: 'border-green-500/30', text: 'text-green-100', icon: 'fa-circle-check', iconColor: 'text-green-400', btn: 'text-green-500 hover:text-green-300' },
+            error:   { bg: 'bg-red-950/90',   border: 'border-red-500/30',   text: 'text-red-100',   icon: 'fa-circle-xmark', iconColor: 'text-red-400',   btn: 'text-red-500 hover:text-red-300'   },
+            warning: { bg: 'bg-amber-950/90', border: 'border-amber-500/30', text: 'text-amber-100', icon: 'fa-triangle-exclamation', iconColor: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-300' },
+            info:    { bg: 'bg-blue-950/90',  border: 'border-blue-500/30',  text: 'text-blue-100',  icon: 'fa-circle-info',  iconColor: 'text-blue-400',   btn: 'text-blue-500 hover:text-blue-300'  },
+        };
+        const c = config[type] ?? config.success;
+
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none';
+            container.style.maxWidth = '380px';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast-item pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-xl ${c.bg} border ${c.border} backdrop-blur-sm shadow-xl`;
+        toast.style.animation = 'slideIn 0.25s ease-out';
+        toast.innerHTML = `
+            <i class="fa-solid ${c.icon} ${c.iconColor} mt-0.5 flex-shrink-0"></i>
+            <p class="text-sm ${c.text} flex-1">${message}</p>
+            <button onclick="dismissToast(this)" class="${c.btn} transition-colors flex-shrink-0">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>`;
+
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.isConnected) dismissToast(toast.querySelector('button')); }, 5000);
+    }
+</script>
+
+</body>
+</html>

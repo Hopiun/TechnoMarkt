@@ -1,0 +1,58 @@
+@model CategoryFormVM
+
+@{
+    bool isEdit = Model?.Action == FormAction.Edit;
+    string title = isEdit ? "Редагування категорії" : "Нова категорія";
+    string submitUrl = isEdit ? $"/Manager/Catalog/EditCategory?categoryId={Model.Id}" : "/Manager/Catalog/AddCategory";
+}
+
+<div class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/50 backdrop-blur-sm flex items-center justify-center category-form-overlay" onclick="if(event.target===this) closeFormModal()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 tracking-tight">@title</h3>
+            </div>
+            <button type="button" onclick="closeFormModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form action="@submitUrl" method="post" class="p-6" onsubmit="submitCategoryForm(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" value="@Model?.Id" />
+            <input type="hidden" asp-for="Action" value="@Model?.Action" />
+            
+            <div asp-validation-summary="ModelOnly" class="text-xs text-red-500 mb-4 bg-red-50 p-2 rounded-lg"></div>
+
+            <div class="space-y-4">
+                <div>
+                    <label asp-for="Name" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Назва <span class="text-red-400">*</span></label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"><i class="fa-solid fa-layer-group"></i></span>
+                        <input asp-for="Name" value="@Model?.Name" class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white transition-all" placeholder="Назва категорії" />
+                    </div>
+                    <span asp-validation-for="Name" class="text-[10px] text-red-500 font-medium mt-1 block"></span>
+                </div>
+
+                <div>
+                    <label asp-for="ParentCategoryId" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Батьківська категорія</label>
+                    <select asp-for="ParentCategoryId" asp-items="@Model?.ParentCategories" class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white transition-all">
+                        <option value="">-- Без батьківської категорії --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-8 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    Скасувати
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-lg text-sm font-bold tracking-wide text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid @(isEdit ? "fa-floppy-disk" : "fa-plus") text-xs"></i>
+                    @(isEdit ? "Зберегти" : "Створити")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+

@@ -1,0 +1,301 @@
+@model CatalogViewModel
+@{
+    ViewData["Title"] = "Каталог товарів";
+}
+
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Каталог товарів</h1>
+    </div>
+    <button type="button" onclick="openItemForm()" class="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-gray-900 rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Додати товар
+    </button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 tracking-tight"><i class="fa-solid fa-chart-pie text-blue-500 mr-1.5"></i> Продажі за категоріями</h3>
+        <div class="space-y-3">
+            @foreach (var cat in Model.TopCategories.Take(5))
+            {
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 font-medium">@cat.CategoryName</span>
+                    <span class="font-bold text-gray-900">₴@cat.TotalSales.ToString("N0")</span>
+                </div>
+            }
+            @if(!Model.TopCategories.Any())
+            {
+                <p class="text-sm text-gray-400 italic">Немає даних за обраний період</p>
+            }
+        </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 tracking-tight"><i class="fa-solid fa-ranking-star text-amber-500 mr-1.5"></i> Топ товарів</h3>
+        <div class="space-y-3">
+            @foreach (var item in Model.TopItems.Take(5))
+            {
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 truncate mr-4 font-medium" title="@item.ItemName">@item.ItemName</span>
+                    <span class="font-bold text-emerald-600 whitespace-nowrap">@item.SoldQuantity шт.</span>
+                </div>
+            }
+             @if(!Model.TopItems.Any())
+            {
+                <p class="text-sm text-gray-400 italic">Немає даних за обраний період</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm relative z-10">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-bold text-gray-900 tracking-tight"><i class="fa-solid fa-list text-gray-400 mr-1.5"></i> Категорії</h3>
+        <button type="button" onclick="openCategoryForm(null)" class="text-[11px] font-bold text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> Створити
+        </button>
+    </div>
+    @await Html.PartialAsync("~/Areas/Manager/_Shared/Views/Shared/Catalog/_Categories.cshtml", Model.Categories)
+</div>
+
+<div class="flex flex-col">
+    <form id="catalog-filter" class="order-2 mb-5 bg-white rounded-xl border border-gray-200 px-5 py-4 flex items-center gap-3 shadow-sm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="categoryId" id="filter-category-id" value="@ViewBag.CategoryId" />
+        <input type="hidden" name="filter.CurrentPage" value="@Model.Items.Pagination.CurrentPage" id="filter-page" />
+        <input type="hidden" name="filter.PageSize" value="@Model.Items.Pagination.PageSize" />
+        
+        <input type="hidden" name="filter.Name" value="@Model.Items.Filter?.Name" id="filter-name" />
+        <div class="flex-1 min-w-[200px]">
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text"
+                       name="_searchProxy"
+                       value="@Model.Items.Filter?.Name"
+                       placeholder="Пошук за назвою..."
+                       class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+        </div>
+
+        <div class="w-48">
+            <select asp-items="@Model.Items.Filter?.Suppliers" name="filter.SupplierId" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <option value="">Усі Постачальники</option>
+            </select>
+        </div>
+        
+        <div class="w-48 flex items-center gap-2">
+            <select name="filter.SortBy" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <option value="Name">За назвою</option>
+                <option value="Price">За ціною</option>
+            </select>
+            
+            <input type="hidden" name="filter.SortAscending" id="sort-asc" value="true" />
+            <button type="button" id="sort-toggle-btn" onclick="toggleSortDir()" class="w-10 h-[38px] rounded-lg border border-gray-200 bg-gray-50/50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors" title="Напрям сортування">
+                <i class="fa-solid fa-arrow-down-a-z"></i>
+            </button>
+        </div>
+    </form>
+
+    <div id="items-grid-container" class="contents">
+        @await Html.PartialAsync("~/Areas/Manager/_Shared/Views/Shared/Catalog/_ItemsGrid.cshtml", Model.Items)
+    </div>
+</div>
+
+<div id="modal-container"></div>
+
+
+    <script>
+        let filterTimeout = null;
+
+        function initCatalogFilter() {
+            const form = document.getElementById('catalog-filter');
+            
+            form.addEventListener('input', (e) => {
+                if (e.target.name === '_searchProxy') {
+                    document.getElementById('filter-name').value = e.target.value;
+                    clearTimeout(filterTimeout);
+                    filterTimeout = setTimeout(() => {
+                        resetPageAndFilter();
+                    }, 400);
+                } else if (e.target.tagName === 'SELECT') {
+                    resetPageAndFilter();
+                }
+            });
+
+            form.addEventListener('submit', (e) => e.preventDefault());
+        }
+
+        function toggleSortDir() {
+            const input = document.getElementById('sort-asc');
+            const btnIcon = document.querySelector('#sort-toggle-btn i');
+            
+            if (input.value === 'true') {
+                input.value = 'false';
+                btnIcon.className = 'fa-solid fa-arrow-down-z-a';
+            } else {
+                input.value = 'true';
+                btnIcon.className = 'fa-solid fa-arrow-down-a-z';
+            }
+            
+            resetPageAndFilter();
+        }
+
+        function resetPageAndFilter() {
+            document.getElementById('filter-page').value = 1;
+            applyFilter();
+        }
+
+        async function applyFilter() {
+            const form = document.getElementById('catalog-filter');
+            const result = await fetch('/Manager/Catalog/FilterItems?' + new URLSearchParams(new FormData(form)));
+            const html = await result.text();
+            document.getElementById('items-grid-container').innerHTML = html;
+        }
+
+        function setCategory(id) {
+            document.getElementById('filter-category-id').value = id || '';
+            resetPageAndFilter();
+        }
+
+        function goToPage(page) {
+            document.getElementById('filter-page').value = page;
+            applyFilter();
+        }
+
+        function closeFormModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        // --- Items CRUD ---
+        async function openItemForm(id = null) {
+            const url = id ? `/Manager/Catalog/ItemForm?itemId=${id}` : `/Manager/Catalog/ItemForm`;
+            const result = await fetch(url);
+            if (result.ok) {
+                document.getElementById('modal-container').innerHTML = await result.text();
+            }
+        }
+
+        async function submitItemForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            const result = await response.json();
+            if (result.success) {
+                closeFormModal();
+                applyFilter();
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        async function deleteItem(id, name) {
+            if (!confirm(`Ви дійсно хочете видалити товар "${name}"?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            const response = await fetch('/Manager/Catalog/DeleteItem', {
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ itemId: id, __RequestVerificationToken: token })
+            });
+            const result = await response.json();
+            if (result.success) {
+                applyFilter();
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        async function openCategoryForm(id = null) {
+            const url = id ? `/Manager/Catalog/CategoryForm?categoryId=${id}` : `/Manager/Catalog/CategoryForm`;
+            const result = await fetch(url);
+            if (result.ok) {
+                document.getElementById('modal-container').innerHTML = await result.text();
+            }
+        }
+
+        // Assume Category form has onsubmit="submitCategoryForm(event)"
+        async function submitCategoryForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            const result = await response.json();
+            if (result.success) {
+                closeFormModal();
+                showToast(result.message, 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        async function deleteCategory(id, name) {
+            if (!confirm(`Ви дійсно хочете видалити категорію "${name}"? Це неможливо, якщо у ній є товари.`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            const response = await fetch('/Manager/Catalog/DeleteCategory', {
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ categoryId: id, __RequestVerificationToken: token })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast(result.message, 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        // --- Discount CRUD ---
+        async function openDiscountForm(itemId = null, categoryId = null) {
+            const url = itemId 
+                ? `/Manager/Catalog/DiscountForm?itemId=${itemId}` 
+                : `/Manager/Catalog/DiscountForm?categoryId=${categoryId}`;
+            const result = await fetch(url);
+            if (result.ok) {
+                document.getElementById('modal-container').innerHTML = await result.text();
+            }
+        }
+
+        // Assume Discount form has onsubmit="submitDiscountForm(event)"
+        async function submitDiscountForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            const result = await response.json();
+            if (result.success) {
+                closeFormModal();
+                applyFilter();
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        async function revokeDiscount(itemId = null, categoryId = null) {
+            if (!confirm(`Зняти знижку?`)) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            const params = new URLSearchParams({ __RequestVerificationToken: token });
+            if (itemId) params.append('itemId', itemId);
+            if (categoryId) params.append('categoryId', categoryId);
+
+            const response = await fetch('/Manager/Catalog/RevokeDiscount', {
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            const result = await response.json();
+            if (result.success) {
+                applyFilter();
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCatalogFilter();
+        });
+    </script>
+

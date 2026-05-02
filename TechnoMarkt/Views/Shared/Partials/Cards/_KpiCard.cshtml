@@ -1,0 +1,19 @@
+﻿@model KpiItem
+
+<div class="bg-white p-5 rounded-xl border border-gray-200 flex items-center gap-4 transition-colors hover:border-gray-300">
+    <div class="w-11 h-11 rounded-lg @Model.Color flex items-center justify-center flex-shrink-0">
+        <i class="@Model.Icon text-lg"></i>
+    </div>
+    <div>
+        <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-0.5">
+            @Model.Title
+            @if (!string.IsNullOrEmpty(Model.Caption))
+            {
+                <span class="text-gray-400 font-normal normal-case tracking-normal">
+                    (@Model.Caption)
+                </span>
+            }
+        </p>
+        <h3 class="text-xl font-bold text-gray-900">@Model.Value</h3>
+    </div>
+</div>

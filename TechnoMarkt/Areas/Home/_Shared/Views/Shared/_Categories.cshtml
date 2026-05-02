@@ -1,0 +1,31 @@
+@model List<CategoryItem>
+@{
+    int? selectedCategoryId = ViewData["SelectedCategoryId"] as int?;
+}
+
+<div class="space-y-0.5">
+    <button onclick="setCategory(null)" class="w-full text-left px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors @(selectedCategoryId == null ? "bg-[#003DA5] text-white hover:bg-[#003DA5]" : "")">
+        Усі товари
+    </button>
+    @foreach (var cat in Model)
+    {
+        <div>
+            <button onclick="setCategory(@cat.Id)" class="w-full text-left px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors @(selectedCategoryId == cat.Id ? "bg-[#003DA5] text-white hover:bg-[#003DA5]" : "")">
+                @cat.Name
+            </button>
+            @if (cat.HasSubCategories)
+            {
+                <div class="ml-4 mt-0.5 space-y-0.5">
+                    @foreach (var subCat in cat.SubCategories!)
+                    {
+                        <button onclick="setCategory(@subCat.Id)" class="w-full text-left px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors @(selectedCategoryId == subCat.Id ? "bg-[#003DA5] text-white hover:bg-[#003DA5]" : "")">
+                            @subCat.Name
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+

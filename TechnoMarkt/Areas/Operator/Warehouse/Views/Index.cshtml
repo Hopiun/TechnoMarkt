@@ -1,0 +1,60 @@
+@model StockTableVM
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Товари та Склад";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Товари та Склад</h1>
+    <p class="text-sm text-gray-500 mt-1">Перегляд складських залишків та стану запасів магазину</p>
+</div>
+
+<div id="stock-table-container">
+    @await Html.PartialAsync("Tables/_StockItems", Model)
+</div>
+
+<script>
+    function toggleSort() {
+        const input = document.getElementById('sort-desc-input');
+        const icon  = document.querySelector('#sort-toggle-btn i');
+        if (!input || !icon) return;
+        const isDesc = input.value === 'true';
+        input.value  = (!isDesc).toString();
+        icon.className = isDesc
+            ? 'fa-solid fa-arrow-up-wide-short'
+            : 'fa-solid fa-arrow-down-wide-short';
+        
+        applyStockFilter();
+    }
+
+    let stockFetchTimeout = null;
+
+    function initStockFilter() {
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#stock-filter')) {
+                clearTimeout(stockFetchTimeout);
+                stockFetchTimeout = setTimeout(() => applyStockFilter(), 400);
+            }
+        });
+    }
+
+    async function applyStockFilter() {
+        const form = document.getElementById('stock-filter');
+        if (!form) return;
+
+        const result = await fetch('/Operator/Warehouse/Filter', {
+              method: 'POST',
+              body: new URLSearchParams(new FormData(form))
+        });
+        const html = await result.text();
+        document.getElementById('stock-table-container').innerHTML = html;
+    }
+
+    function resetStockFilter() {
+        window.location.href = window.location.pathname;
+    }
+
+    document.addEventListener('DOMContentLoaded', initStockFilter);
+</script>
+

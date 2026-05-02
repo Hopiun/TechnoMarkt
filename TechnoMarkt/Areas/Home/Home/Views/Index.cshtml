@@ -1,0 +1,214 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Головна";
+    ViewData["HomeModel"] = Model;
+}
+
+<section class="bg-[#1A1A2E] text-white py-14 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div>
+            <h1 class="text-5xl font-extrabold leading-tight mb-2">
+                Найкраща техніка
+                <span class="text-[#FFE000] block">для вашого дому</span>
+            </h1>
+            <p class="text-gray-400 text-sm mt-3 mb-8">Понад 5000 товарів у 5 магазинах України</p>
+            <div class="flex gap-3 flex-wrap items-center mb-6">
+                <select id="citySelect" asp-for="SelectedCityId" asp-items="Model.Cities" class="px-4 py-2.5 bg-[#16213E] text-white text-sm border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFE000]">
+                    <option value="">Оберіть місто</option>
+                </select>
+                <select id="storeSelect" asp-for="SelectedStoreId" class="px-4 py-2.5 bg-[#16213E] text-white text-sm border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFE000] @(Model.Stores == null || !Model.Stores.Any() ? "hidden" : "")">
+                    @if (Model.Stores != null && Model.Stores.Any())
+                    {
+                        <option value="">Оберіть магазин</option>
+                        @foreach (var store in Model.Stores)
+                        {
+                            <option value="@store.Value" selected="@(store.Value == Model.SelectedStoreId?.ToString())">@store.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <a id="catalogLink" href="@Url.Action("Index", "Catalog", new { Area = "Home" })" class="px-7 py-3 bg-[#FFE000] text-[#1A1A2E] font-bold text-sm rounded-xl hover:brightness-110 hover:-translate-y-0.5 transition-all no-underline">Перейти до каталогу</a>
+                <a href="#" class="px-7 py-3 bg-[#002A80] text-white font-semibold text-sm border border-blue-700/50 rounded-xl hover:bg-blue-900 transition-all no-underline">Акції та знижки</a>
+            </div>
+        </div>
+        <div class="hidden lg:flex justify-end pr-10">
+            <div class="max-w-[340px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/20">
+                <img src="/images/appliances_store.jpg" alt="TechnoMarkt Store" class="w-full h-auto object-cover brightness-95" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="flex justify-center relative -top-1 z-20">
+    <div class="h-4 w-56 bg-[#FFE000] rounded-full shadow-[0_5px_20px_rgba(255,224,0,0.4)]"></div>
+</div>
+
+<section class="py-14">
+    <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-2xl font-extrabold text-gray-900 mb-1">Категорії товарів</h2>
+        <div class="w-12 h-0.5 bg-[#003DA5] rounded mb-7"></div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+            @foreach (var cat in Model.Categories)
+            {
+                <a href="#" class="bg-white border border-gray-200 rounded-2xl py-6 px-3 text-center no-underline hover:border-[#003DA5] hover:shadow-lg hover:-translate-y-1 transition-all group" title="@cat.Name">
+                    <span class="text-sm font-semibold text-gray-700 leading-snug group-hover:text-[#003DA5] transition-colors">@cat.Name</span>
+                </a>
+            }
+            @if (!Model.Categories.Any())
+            {
+                <p class="col-span-full text-sm text-gray-400 italic">Категорії завантажуються...</p>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="pb-14">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="flex items-end justify-between mb-7">
+            <div>
+                <h2 class="text-2xl font-extrabold text-gray-900 mb-1">Популярні товари</h2>
+                <div class="w-12 h-0.5 bg-[#003DA5] rounded"></div>
+            </div>
+            <a href="#" id="see-all-link" class="text-sm font-semibold text-[#003DA5] hover:text-[#FFE000] transition-colors no-underline">Дивитись всі →</a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            @foreach (var item in Model.TopItems)
+            {
+                <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all">
+                    <div class="relative bg-gray-100 aspect-video flex items-center justify-center">
+                        @if (item.Discount != null)
+                        {
+                            <span class="absolute top-2.5 left-2.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">-@item.Discount.Percent%</span>
+                        }
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" class="w-full h-full object-contain p-4" />
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-camera text-gray-300 text-4xl"></i>
+                        }
+                    </div>
+
+                    <div class="p-4 flex flex-col flex-1 gap-1.5">
+                        <p class="text-sm font-bold text-gray-900 leading-snug">@item.Name</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">@item.BrandName</p>
+
+                        <div class="mt-1">
+                            @if (item.Discount != null)
+                            {
+                                <span class="text-xs font-medium text-gray-400 line-through mr-1.5">₴@item.Price.ToString("N0")</span>
+                            }
+                            <span class="text-lg font-extrabold text-[#003DA5]">₴@item.FinalPrice.ToString("N0")</span>
+                        </div>
+
+                        <p class="text-xs font-semibold flex items-center gap-1 @(item.StockStatus == StockStatus.InStock ? "text-emerald-600" : item.StockStatus == StockStatus.Low ? "text-amber-500" : "text-red-500")">
+                            <i class="fa-solid @(item.StockStatus != StockStatus.OutOfStock ? "fa-circle-check" : "fa-circle-xmark")"></i>
+                            @(item.StockStatus == StockStatus.InStock ? "В наявності" : item.StockStatus == StockStatus.Low ? "Мало" : "Немає")
+                        </p>
+
+                        <button type="button" onclick="addToCart(@item.Id)" class="mt-auto block w-full py-2.5 bg-[#FFE000] text-[#1A1A2E] text-sm font-bold text-center rounded-xl hover:brightness-110 transition-all @(item.StockStatus == StockStatus.OutOfStock ? "opacity-50 cursor-not-allowed" : "")">
+                            <i class="fa-solid fa-cart-plus mr-1"></i> До кошика
+                        </button>
+                    </div>
+                </div>
+            }
+            @if (!Model.TopItems.Any())
+            {
+                <p class="col-span-full text-sm text-gray-400 italic">Популярні товари цього місяця поки відсутні.</p>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="bg-gradient-to-r from-[#1A1A2E] to-[#002A80] text-white text-center py-14 px-6">
+    <div class="mb-4">
+        <i class="fa-solid fa-gift text-4xl text-[#FFE000]"></i>
+    </div>
+    <h2 class="text-2xl font-extrabold text-[#FFE000] mb-2">Акції тижня — до -40% на побутову техніку!</h2>
+    <p class="text-blue-100 text-sm mb-6 opacity-80">Тільки до 31 грудня. Кількість товарів обмежена.</p>
+    <a href="#" class="inline-block px-10 py-3.5 bg-[#FFE000] text-black font-bold text-sm rounded-xl hover:brightness-110 transition-all no-underline shadow-[0_4px_15px_rgba(255,224,0,0.3)]">Переглянути акції</a>
+</section>
+
+<section class="bg-gray-50 py-14">
+    <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-2xl font-extrabold text-gray-900 mb-1">Чому обирають нас</h2>
+        <div class="w-12 h-0.5 bg-[#003DA5] rounded mb-8"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white border border-gray-200 rounded-2xl p-7 text-center shadow-sm hover:shadow-md transition-shadow">
+                <i class="fa-solid fa-truck-fast text-[#003DA5] text-3xl mb-3"></i>
+                <h4 class="text-sm font-bold text-gray-900 mb-1">Швидка доставка</h4>
+                <p class="text-xs text-gray-500">По всій Україні за 1-3 дні</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-7 text-center shadow-sm hover:shadow-md transition-shadow">
+                <i class="fa-solid fa-shield-halved text-[#003DA5] text-3xl mb-3"></i>
+                <h4 class="text-sm font-bold text-gray-900 mb-1">Офіційна гарантія</h4>
+                <p class="text-xs text-gray-500">До 3 років на всі товари</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-7 text-center shadow-sm hover:shadow-md transition-shadow">
+                <i class="fa-solid fa-credit-card text-[#003DA5] text-3xl mb-3"></i>
+                <h4 class="text-sm font-bold text-gray-900 mb-1">Зручна оплата</h4>
+                <p class="text-xs text-gray-500">Картка, готівка, розстрочка</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-7 text-center shadow-sm hover:shadow-md transition-shadow">
+                <i class="fa-solid fa-store text-[#003DA5] text-3xl mb-3"></i>
+                <h4 class="text-sm font-bold text-gray-900 mb-1">5 магазинів</h4>
+                <p class="text-xs text-gray-500">У різних містах України</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const citySelect = document.getElementById('citySelect');
+            const storeSelect = document.getElementById('storeSelect');
+
+            if (citySelect && storeSelect) {
+                citySelect.addEventListener('change', function () {
+                    const cityId = this.value;
+
+                    storeSelect.innerHTML = '<option value="">Оберіть магазин</option>';
+                    storeSelect.classList.add('hidden');
+
+                    if (cityId) {
+                        fetch(`/Home/Home/GetStoresByCity?cityId=${cityId}`)
+                            .then(response => response.json())
+                            .then(stores => {
+                                if (stores.length > 0) {
+                                    stores.forEach(store => {
+                                        const option = document.createElement('option');
+                                        option.value = store.id;
+                                        option.textContent = store.address;
+                                        storeSelect.appendChild(option);
+                                    });
+                                    storeSelect.classList.remove('hidden');
+                            }})
+                            .catch(error => console.error('Помилка завантаження магазинів:', error));
+                    }
+                });
+
+            }
+
+            const catalogLink = document.getElementById('catalogLink');
+            if (catalogLink) {
+                catalogLink.addEventListener('click', async function (e) {
+                    const storeVal = storeSelect.value;
+                    if (storeVal) {
+                        e.preventDefault();
+                        await fetch('/Home/Home/SetStore', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(parseInt(storeVal))
+                        });
+                        window.location.href = catalogLink.href;
+                    }
+                });
+            }
+        });
+    </script>
+

@@ -1,0 +1,236 @@
+@model OrderDetailsViewModel
+
+@{
+    bool showDiscount = Model.Role is "Operator" or "Client";
+    bool showItemImage = false;
+    bool isOperator = Model.Role == "Operator";
+    bool isClient = Model.Role == "Client";
+
+    int tableColCount = 4 + (showItemImage ? 1 : 0) + (showDiscount ? 1 : 0);
+}
+
+<div class="bg-white border-t border-blue-100">
+
+    <div class="px-6 py-3 bg-blue-50/50 border-b border-blue-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-list-ul text-blue-400 text-xs"></i>
+            <span class="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Позиції замовлення</span>
+            <span class="text-[11px] text-blue-400">(@Model.Rows.Count поз.)</span>
+        </div>
+        <button class="close-details-btn w-6 h-6 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+    </div>
+
+    @if (!Model.Rows.Any())
+    {
+        <div class="px-6 py-8 text-center text-gray-400">
+            <i class="fa-solid fa-box-open text-2xl opacity-30 mb-2"></i>
+            <p class="text-sm">Позицій не знайдено</p>
+        </div>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50">
+                        @if (showItemImage)
+                        {
+                            <th class="px-6 py-2.5 w-16"></th>
+                        }
+                        <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Товар</th>
+                        <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Категорія</th>
+                        <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Кількість</th>
+                        <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Ціна</th>
+                        @if (showDiscount)
+                        {
+                            <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Знижка</th>
+                        }
+                        <th class="px-6 py-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Сума</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr class="hover:bg-gray-50/40 transition-colors">
+
+                            @if (showItemImage)
+                            {
+                                <td class="px-6 py-3">
+                                    @if (!string.IsNullOrEmpty(row.ImageUrl))
+                                    {
+                                        <img src="@row.ImageUrl" alt="@row.ItemName"
+                                             class="w-10 h-10 object-cover rounded-lg border border-gray-100" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                            <i class="fa-solid fa-image text-gray-300 text-xs"></i>
+                                        </div>
+                                    }
+                                </td>
+                            }
+
+                            <td class="px-6 py-3">
+                                <p class="text-sm font-medium text-gray-900">@row.ItemName</p>
+                                <p class="text-[11px] text-gray-400">#@row.ItemId</p>
+                            </td>
+
+                            <td class="px-6 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[11px] font-medium">
+                                    @row.Category
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-3 text-center">
+                                <span class="text-sm font-semibold text-gray-900">@row.Quantity</span>
+                                <span class="text-[11px] text-gray-400"> шт.</span>
+                            </td>
+
+                            <td class="px-6 py-3 text-right">
+                                <p class="text-sm text-gray-900">₴@row.PriceAtMoment.ToString("N0")</p>
+                            </td>
+
+                            @if (showDiscount)
+                            {
+                                <td class="px-6 py-3 text-center">
+                                    @if (row.DiscountPercent.HasValue && row.DiscountPercent > 0)
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-[11px] font-semibold">
+                                            <i class="fa-solid fa-tag text-[10px]"></i>
+                                            -@row.DiscountPercent%
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-300 text-sm">—</span>
+                                    }
+                                </td>
+                            }
+
+                            <td class="px-6 py-3 text-right">
+                                <p class="text-sm font-bold text-gray-900">₴@row.LineTotal.ToString("N0")</p>
+                                @if (row.DiscountPercent.HasValue && row.DiscountPercent > 0)
+                                {
+                                    <p class="text-[10px] text-gray-400 line-through">
+                                        ₴@((row.PriceAtMoment * row.Quantity).ToString("N0"))
+                                    </p>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="border-t border-gray-200 bg-gray-50/30">
+                        <td colspan="@(tableColCount - 1)" class="px-6 py-3 text-[11px] text-gray-400">
+                            Разом позицій: <span class="font-semibold text-gray-600">@Model.Rows.Count</span>
+                        </td>
+                        <td class="px-6 py-3 text-right">
+                            <span class="text-[11px] text-gray-500">Загальна сума:</span>
+                            <span class="text-sm font-bold text-gray-900 ml-1">
+                                ₴@Model.Rows.Sum(r => r.LineTotal).ToString("N0")
+                            </span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+
+    @if (isOperator)
+    {
+        <div class="px-6 py-5 border-t border-gray-100 bg-gray-50/20 space-y-4">
+
+            @if (Model.OrderStatus == OrderStatus.New || Model.OrderStatus == OrderStatus.Processing)
+            {
+                <button class="advance-status-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+                        data-order-id="@Model.OrderId">
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                    @(Model.OrderStatus == OrderStatus.New ? "Прийняти в обробку" : "Позначити готовим")
+                </button>
+            }
+
+            @if (Model.OrderStatus == OrderStatus.Ready && !Model.IsPaid)
+            {
+                <div class="payment-container space-y-3">
+                    <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Спосіб оплати</p>
+
+                    <div class="flex flex-wrap gap-2">
+
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="payMethod_@Model.OrderId" value="Cash"
+                                   class="pay-method-radio" checked />
+                            <i class="fa-solid fa-money-bill-wave text-gray-400 text-sm"></i>
+                            <span class="text-sm font-medium text-gray-700">Готівка</span>
+                        </label>
+
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="payMethod_@Model.OrderId" value="Card"
+                                   class="pay-method-radio" />
+                            <i class="fa-solid fa-credit-card text-gray-400 text-sm"></i>
+                            <span class="text-sm font-medium text-gray-700">Картка (термінал)</span>
+                        </label>
+
+                        @foreach (var pm in Model.ClientPaymentMethods)
+                        {
+                            <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <input type="radio"
+                                       name="payMethod_@Model.OrderId"
+                                       value="Card"
+                                       class="pay-method-radio"
+                                       data-payment-method-id="@pm.PaymentMethodId" />
+                                <i class="fa-solid fa-credit-card text-blue-400 text-sm"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">@pm.BankName</p>
+                                    <p class="text-[11px] text-gray-400">@pm.MaskedCardNumber · @pm.CardType</p>
+                                </div>
+                            </label>
+                        }
+                    </div>
+
+                    <button class="complete-order-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+                            data-order-id="@Model.OrderId"
+                            data-order-total="@Model.OrderTotal">
+                        <i class="fa-solid fa-credit-card text-xs"></i>
+                        Прийняти оплату ₴@Model.OrderTotal.ToString("N0")
+                    </button>
+                </div>
+            }
+
+            @if (Model.OrderStatus != OrderStatus.Completed
+                    && Model.OrderStatus != OrderStatus.Returned
+                    && Model.OrderStatus != OrderStatus.Cancelled)
+            {
+                <button class="cancel-btn flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-sm font-medium transition-colors"
+                        data-order-id="@Model.OrderId">
+                    <i class="fa-solid fa-circle-xmark text-xs"></i>
+                    Скасувати замовлення
+                </button>
+            }
+
+            @if (Model.CanBeReturned)
+            {
+                <button class="return-btn flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-200 text-orange-500 hover:bg-orange-50 text-sm font-medium transition-colors"
+                        data-order-id="@Model.OrderId">
+                    <i class="fa-solid fa-rotate-left text-xs"></i>
+                    Повернути замовлення
+                </button>
+            }
+        </div>
+    }
+
+    @if (isClient
+        && (Model.OrderStatus == OrderStatus.New
+        || Model.OrderStatus == OrderStatus.Processing
+        || Model.OrderStatus == OrderStatus.Ready))
+    {
+        <div class="px-6 py-4 border-t border-gray-100">
+            <button class="cancel-btn flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-sm font-medium transition-colors"
+                    data-order-id="@Model.OrderId">
+                <i class="fa-solid fa-circle-xmark text-xs"></i>
+                Відмовитись від замовлення
+            </button>
+        </div>
+    }
+</div>

@@ -1,0 +1,88 @@
+@model List<EmployeeRowDto>
+
+<table class="w-full text-left border-collapse">
+    <thead>
+        <tr class="bg-gray-50/50">
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Прізвище та ім'я</th>
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Роль</th>
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Статус</th>
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Зарплата</th>
+            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дії</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+        @foreach (var emp in Model)
+        {
+            string statusClass = emp.Status switch
+            {
+                EmployeeStatus.Present => "bg-green-50 text-green-600",
+                EmployeeStatus.Absent => "bg-red-50 text-red-600",
+                EmployeeStatus.OnLeave => "bg-amber-50 text-amber-600",
+                EmployeeStatus.Former => "bg-gray-100 text-gray-500",
+                _ => "bg-gray-50 text-gray-600"
+            };
+
+            string statusLabel = emp.Status switch
+            {
+                EmployeeStatus.Present => "На зміні",
+                EmployeeStatus.Absent => "Відсутній",
+                EmployeeStatus.OnLeave => "У відпустці",
+                EmployeeStatus.Former => "Звільнений",
+                _ => emp.Status.ToString()
+            };
+
+            <tr class="hover:bg-gray-50/50 transition-colors @(emp.Status == EmployeeStatus.Former ? "opacity-50" : "")">
+                <td class="px-6 py-4 text-sm text-gray-500 font-mono">@emp.EmployeeId</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            @emp.FirstName[0]@emp.LastName[0]
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">@emp.LastName @emp.FirstName</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold @(emp.Role == EmployeeRole.Administrator ? "bg-purple-50 text-purple-600" : emp.Role == EmployeeRole.Manager ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-700")">
+                        <i class="fa-solid @(emp.Role == EmployeeRole.Administrator ? "fa-shield-halved" : emp.Role == EmployeeRole.Manager ? "fa-user-tie" : "fa-headset") text-[10px]"></i>
+                        @(emp.Role == EmployeeRole.Administrator ? "Адміністратор" : emp.Role == EmployeeRole.Manager ? "Менеджер" : "Оператор")
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide @statusClass">
+                        @statusLabel
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm font-bold text-gray-900 text-right">₴@(emp.Salary?.ToString("N0") ?? "—")</td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        @if (emp.Status != EmployeeStatus.Former)
+                        {
+                            <button type="button" onclick="openEmployeeForm(@emp.EmployeeId)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Редагувати">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
+                            <button type="button" onclick="deactivateEmployee(@emp.EmployeeId)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Деактивувати">
+                                <i class="fa-solid fa-user-xmark text-xs"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" onclick="reactivateEmployee(@emp.EmployeeId)" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Реактивувати">
+                                <i class="fa-solid fa-user-check text-xs"></i>
+                            </button>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">Працівників не знайдено</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

@@ -1,0 +1,17 @@
+@model List<NavigationItem>
+
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+@foreach (var item in Model)
+{
+    bool isActive = string.Equals(item.Controller, currentController, StringComparison.OrdinalIgnoreCase);
+
+    <a asp-area="@item.Area" asp-controller="@item.Controller" asp-action="@item.Action"
+       class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors 
+       @(isActive ? "bg-[#007AFF] text-white font-semibold" : "hover:bg-gray-800 hover:text-white font-medium text-gray-300")">
+        <div class="w-6 text-center"><i class="fa-solid @item.Icon text-lg"></i></div>
+        <span class="text-sm">@item.Title</span>
+    </a>
+}

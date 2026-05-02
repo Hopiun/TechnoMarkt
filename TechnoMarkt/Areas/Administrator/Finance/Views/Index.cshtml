@@ -1,0 +1,358 @@
+@model FinanceViewModel
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Фінанси";
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Фінанси</h1>
+        <p class="text-sm text-gray-500 mt-1">Доходи, транзакції та квартальна аналітика магазину</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <a href="#" onclick="downloadFinanceReport(event)"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm">
+            <i class="fa-solid fa-file-pdf text-base"></i>
+            Завантажити PDF звіт
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Виручка за рік", Value = $"₴{Model.Kpi.YearlyRevenue:N0}",
+        Caption = $"з 1 січня {DateTime.Now.Year} р.", Color = "bg-blue-50 text-blue-600", Icon = "fa-chart-line" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Виручка за період", Value = $"₴{Model.Kpi.PeriodRevenue:N0}",
+        Caption = "за поточний місяць", Color = "bg-green-50 text-green-600", Icon = "fa-sack-dollar" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Завершені замовлення", Value = Model.Kpi.CompletedOrdersCount.ToString(),
+        Caption = "за поточний місяць", Color = "bg-purple-50 text-purple-600", Icon = "fa-cart-shopping" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Середній чек", Value = $"₴{Model.Kpi.AverageOrder:N0}",
+        Caption = "за поточний місяць", Color = "bg-amber-50 text-amber-600", Icon = "fa-receipt" })
+
+</div>
+
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Динаміка продажів</h4>
+                <p class="text-[10px] text-gray-400 mt-0.5">Тижнева виручка за завершеними платежами</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-[10px] text-gray-400 font-medium">Тиждень від:</label>
+                <input type="date" id="weekly-start-input"
+                       value="@Model.WeekStart.ToString("yyyy-MM-dd")"
+                       class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+        </div>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="dailySalesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Методи оплати</h4>
+                <p class="text-[10px] text-gray-400 mt-0.5">Розподіл за обраний період</p>
+            </div>
+            <div class="flex items-center gap-1">
+                <input type="date" id="methods-date-from"
+                       value="@Model.DateFilter.DateFrom?.ToString("yyyy-MM-dd")"
+                       class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <span class="text-gray-300 text-xs">—</span>
+                <input type="date" id="methods-date-to"
+                       value="@Model.DateFilter.DateTo?.ToString("yyyy-MM-dd")"
+                       class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+        </div>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="paymentMethodsChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<div class="bg-white p-6 rounded-xl border border-gray-200 mb-8">
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Квартальна виручка</h4>
+            <p class="text-[10px] text-gray-400 mt-0.5">Завершені платежі по кварталах</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-[10px] text-gray-400 font-medium">Рік:</label>
+            <select id="quarterly-year-select"
+                    class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 4; y--)
+                {
+                    <option value="@y" selected="@(Model.QuarterlyYear == y)">@y</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div style="position: relative; height: 220px; width: 100%;">
+        <canvas id="quarterlyChart"></canvas>
+    </div>
+</div>
+
+<div id="transactions-table-container">
+    @await Html.PartialAsync("Tables/_Transactions", Model.TransactionsTable)
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
+
+    const PALETTE = {
+        blue:   '#3B82F6',
+        green:  '#22C55E',
+        amber:  '#F59E0B',
+        purple: '#A855F7',
+        indigo: '#6366F1',
+        teal:   '#14B8A6',
+        rose:   '#F43F5E',
+    };
+
+    function buildLineChart(id, labels, values) {
+        const ctx = document.getElementById(id);
+        if (!ctx) return null;
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    borderColor: PALETTE.blue,
+                    backgroundColor: 'rgba(59,130,246,0.07)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: PALETTE.blue,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: '#F2F2F7' }, border: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    function buildDoughnutChart(id, labels, values) {
+        const ctx = document.getElementById(id);
+        if (!ctx) return null;
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: [PALETTE.teal, PALETTE.indigo, '#9CA3AF'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    function buildBarChart(id, labels, values) {
+        const ctx = document.getElementById(id);
+        if (!ctx) return null;
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: [PALETTE.blue, PALETTE.green, PALETTE.amber, PALETTE.purple],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    y: { grid: { color: '#F2F2F7' }, border: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    const initialDailySalesRaw   = @Html.Raw(Json.Serialize(Model.DailySales.OrderBy(x => x.Key)));
+    const initialMethodsRaw      = @Html.Raw(Json.Serialize(Model.TransactionByMethod));
+    const initialQuarterlyRaw    = @Html.Raw(Json.Serialize(Model.QuarterlyRevenue));
+
+    let dailySalesChart;
+    let paymentMethodsChart;
+    let quarterlyChart;
+
+    function initDailySalesChart(raw) {
+        const labels = raw.map(x => {
+            const d = new Date(x.key);
+            return d.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
+        });
+        const values = raw.map(x => x.value);
+
+        if (dailySalesChart) dailySalesChart.destroy();
+        dailySalesChart = buildLineChart('dailySalesChart', labels, values);
+    }
+
+    function initPaymentMethodsChart(raw) {
+        const labels = Object.keys(raw).map(k => k === 'Cash' ? 'Готівка' : k === 'Card' ? 'Карта' : k);
+        const values = Object.values(raw);
+
+        if (paymentMethodsChart) paymentMethodsChart.destroy();
+        paymentMethodsChart = buildDoughnutChart('paymentMethodsChart', labels, values);
+    }
+
+    function initQuarterlyChart(raw) {
+        const labels = raw.map(q => `Q${q.quarter}`);
+        const values = raw.map(q => q.revenue);
+
+        if (quarterlyChart) quarterlyChart.destroy();
+        quarterlyChart = buildBarChart('quarterlyChart', labels, values);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initDailySalesChart(initialDailySalesRaw);
+        initPaymentMethodsChart(initialMethodsRaw);
+        initQuarterlyChart(initialQuarterlyRaw);
+
+        setTimeout(() => {
+            dailySalesChart?.resize();
+            paymentMethodsChart?.resize();
+            quarterlyChart?.resize();
+        }, 150);
+    });
+
+    let weeklyDebounce = null;
+    document.getElementById('weekly-start-input')?.addEventListener('change', (e) => {
+        clearTimeout(weeklyDebounce);
+        weeklyDebounce = setTimeout(async () => {
+            const weekStart = e.target.value;
+            if (!weekStart) return;
+            const res  = await fetch(`/Administrator/Finance/DailySalesChart?weekStart=${weekStart}`);
+            const raw  = await res.json();
+            const pairs = Object.entries(raw).map(([k, v]) => ({ key: k, value: v }))
+                .sort((a, b) => a.key.localeCompare(b.key));
+            initDailySalesChart(pairs);
+        }, 400);
+    });
+
+    let methodsDebounce = null;
+    function refreshMethodsChart() {
+        clearTimeout(methodsDebounce);
+        methodsDebounce = setTimeout(async () => {
+            const from = document.getElementById('methods-date-from')?.value ?? '';
+            const to   = document.getElementById('methods-date-to')?.value ?? '';
+            let url = '/Administrator/Finance/PaymentMethodsChart';
+            const params = new URLSearchParams();
+            if (from) params.append('filter.DateFrom', from);
+            if (to)   params.append('filter.DateTo',   to);
+            if (params.size) url += '?' + params.toString();
+            const res = await fetch(url);
+            const raw = await res.json();
+            initPaymentMethodsChart(raw);
+        }, 400);
+    }
+    document.getElementById('methods-date-from')?.addEventListener('change', refreshMethodsChart);
+    document.getElementById('methods-date-to')?.addEventListener('change',   refreshMethodsChart);
+
+    let quarterlyDebounce = null;
+    document.getElementById('quarterly-year-select')?.addEventListener('change', (e) => {
+        clearTimeout(quarterlyDebounce);
+        quarterlyDebounce = setTimeout(async () => {
+            const year = e.target.value;
+            const res  = await fetch(`/Administrator/Finance/QuarterlyRevenueChart?year=${year}`);
+            const raw  = await res.json();
+            initQuarterlyChart(raw);
+        }, 400);
+    });
+
+    let transactionsFetchTimeout = null;
+
+    function initTransactionsFilter() {
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#transactions-filter')) {
+                clearTimeout(transactionsFetchTimeout);
+                transactionsFetchTimeout = setTimeout(() => applyTransactionsFilter(), 400);
+            }
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('#transactions-filter')) {
+                clearTimeout(transactionsFetchTimeout);
+                transactionsFetchTimeout = setTimeout(() => applyTransactionsFilter(), 400);
+            }
+        });
+    }
+
+    async function applyTransactionsFilter() {
+        const form = document.getElementById('transactions-filter');
+        if (!form) return;
+
+        const result = await fetch('/Administrator/Finance/Filter', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form))
+        });
+
+        const html = await result.text();
+        document.getElementById('transactions-table-container').innerHTML = html;
+    }
+
+    function resetTransactionsFilter() {
+        window.location.href = window.location.pathname;
+    }
+
+    function downloadFinanceReport(e) {
+        e.preventDefault();
+        const params = new URLSearchParams();
+        
+        const methodsFrom = document.getElementById('methods-date-from')?.value;
+        const methodsTo = document.getElementById('methods-date-to')?.value;
+        if (methodsFrom) params.append('dateFilter.DateFrom', methodsFrom);
+        if (methodsTo) params.append('dateFilter.DateTo', methodsTo);
+        
+        const ws = document.getElementById('weekly-start-input')?.value;
+        if (ws) params.append('weekStart', ws);
+        
+        const qy = document.getElementById('quarterly-year-select')?.value;
+        if (qy) params.append('quarterlyYear', qy);
+        
+        const form = document.getElementById('transactions-filter');
+        if (form) {
+            const formData = new FormData(form);
+            for (const [key, value] of formData.entries()) {
+                if (value) params.append(key, value);
+            }
+        }
+        
+        window.location.href = `/Administrator/Finance/DownloadReport?${params.toString()}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', initTransactionsFilter);
+</script>

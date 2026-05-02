@@ -1,0 +1,155 @@
+@model ClientOrdersTableVM
+
+@{
+    bool hasActiveFilter = Model.Filter?.Status != null
+        || Model.Filter?.DateFrom != null
+        || Model.Filter?.DateTo != null;
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4 shadow-sm">
+    <form id="orders-filter" class="flex flex-wrap items-end gap-4">
+        @Html.AntiForgeryToken()
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Статус замовлення</label>
+            <select name="filter.Status" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <option value="">Всі статуси</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.New" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.New)">Нове</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.Processing" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.Processing)">Формується</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.Ready" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.Ready)">Готове до видачі</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.Completed" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.Completed)">Завершено</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.Returned" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.Returned)">Повернуто</option>
+                <option value="@TechnoMarkt.Models.OrderStatus.Cancelled" selected="@(Model.Filter?.Status == TechnoMarkt.Models.OrderStatus.Cancelled)">Скасовано</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Період від</label>
+            <input type="date" name="filter.DateFrom" value="@Model.Filter?.DateFrom?.ToString("yyyy-MM-dd")"
+                   class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Період до</label>
+            <input type="date" name="filter.DateTo" value="@Model.Filter?.DateTo?.ToString("yyyy-MM-dd")"
+                   class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" />
+        </div>
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetOrdersFilter()"
+                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border-border-gray-200 text-gray-500 text-sm font-bold hover:bg-gray-100 transition-colors h-[42px] mt-auto">
+                <i class="fa-solid fa-xmark"></i> Скинути
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
+        <h4 class="text-xl font-bold text-gray-900 tracking-tight">Ваші замовлення</h4>
+        <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-600 rounded-full">@Model.Rows.Count шт.</span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Замовлення</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Дата створення</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Статус</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Сума</th>
+                    <th class="px-6 py-4"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4 text-gray-400">
+                                <i class="fa-solid fa-box-open text-5xl opacity-40"></i>
+                                <div>
+                                    <p class="text-base font-bold text-gray-500">Замовлень немає</p>
+                                    <p class="text-sm mt-1">Ви ще нічого не замовляли або за вашим фільтром нічого не знайдено.</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var order in Model.Rows)
+                    {
+                        var (statusLabel, statusBg, statusText, statusIcon) = order.OrderStatus switch
+                        {
+                            TechnoMarkt.Models.OrderStatus.New => ("Нове", "bg-blue-50", "text-blue-600", "fa-circle-plus"),
+                            TechnoMarkt.Models.OrderStatus.Processing => ("Триває обробка", "bg-amber-50", "text-amber-600", "fa-spinner"),
+                            TechnoMarkt.Models.OrderStatus.Ready => ("Готове до видачі", "bg-teal-50", "text-teal-600", "fa-box-open"),
+                            TechnoMarkt.Models.OrderStatus.Completed => ("Завершено", "bg-green-50", "text-green-600", "fa-check-double"),
+                            TechnoMarkt.Models.OrderStatus.Returned => ("Повернуто", "bg-gray-100", "text-gray-600", "fa-rotate-left"),
+                            TechnoMarkt.Models.OrderStatus.Cancelled => ("Скасовано", "bg-red-50", "text-red-500", "fa-xmark"),
+                            _ => ("Невідомо", "bg-gray-50", "text-gray-400", "fa-question")
+                        };
+
+                        bool clientCanCancel = order.OrderStatus == TechnoMarkt.Models.OrderStatus.New || 
+                                               order.OrderStatus == TechnoMarkt.Models.OrderStatus.Processing || 
+                                               order.OrderStatus == TechnoMarkt.Models.OrderStatus.Ready;
+
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            
+                            <td class="px-6 py-5">
+                                <p class="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">#@order.OrderId</p>
+                            </td>
+
+                            <td class="px-6 py-5 text-center">
+                                <p class="text-sm font-medium text-gray-900">@order.OrderDate.ToString("dd.MM.yyyy")</p>
+                                <p class="text-xs text-gray-400">@order.OrderDate.ToString("HH:mm")</p>
+                            </td>
+
+                            <td class="px-6 py-5 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg @statusBg @statusText text-xs font-bold">
+                                    <i class="fa-solid @statusIcon opacity-80"></i>
+                                    @statusLabel
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-5 text-right">
+                                <p class="text-base font-black text-gray-900">₴@order.OrderTotal.ToString("N0")</p>
+                            </td>
+
+                            <td class="px-6 py-5 pr-8 text-right w-44">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button class="details-btn w-10 h-10 rounded-xl bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-center shadow-sm"
+                                            data-order-id="@order.OrderId"
+                                            title="Деталі замовлення">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    
+                                    @if (clientCanCancel)
+                                    {
+                                        <button class="cancel-btn w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors flex items-center justify-center shadow-sm"
+                                                data-order-id="@order.OrderId"
+                                                title="Відмовитись від замовлення">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <p class="text-sm font-medium text-gray-500">Загальна сума ваших замовлень:</p>
+            <p class="text-xl font-black text-[#003DA5]">@Model.Rows.Sum(o => o.OrderTotal).ToString("N0")</p>
+        </div>
+    }
+</div>
+
+

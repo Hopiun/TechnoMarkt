@@ -1,0 +1,174 @@
+@model EventLogsTableVM
+
+@{
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.Filter?.Role)
+        || !string.IsNullOrEmpty(Model.Filter?.Action)
+        || !string.IsNullOrEmpty(Model.Filter?.Entity)
+        || !string.IsNullOrEmpty(Model.Filter?.SearchUser);
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4">
+    <form id="eventlogs-filter" class="flex flex-wrap items-end gap-3">
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Роль</label>
+            <select name="filter.Role"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі</option>
+                @foreach (var opt in Model.RoleOptions)
+                {
+                    <option value="@opt.Value" selected="@(Model.Filter?.Role == opt.Value)">@opt.Text</option>
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Дія</label>
+            <select name="filter.Action"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі</option>
+                @foreach (var opt in Model.ActionOptions)
+                {
+                    <option value="@opt.Value" selected="@(Model.Filter?.Action == opt.Value)">@opt.Text</option>
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Сутність</label>
+            <select name="filter.Entity"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі</option>
+                @foreach (var opt in Model.EntityOptions)
+                {
+                    <option value="@opt.Value" selected="@(Model.Filter?.Entity == opt.Value)">@opt.Text</option>
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Користувач</label>
+            <input type="text" name="filter.SearchUser" value="@Model.Filter?.SearchUser"
+                   class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="Email або ім'я..." />
+        </div>
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetEventLogsFilter()"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Скинути</span>
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+            <h4 class="text-sm font-bold text-gray-900 tracking-tight">Журнал дій</h4>
+            <p class="text-[11px] text-gray-400 mt-0.5">
+                Знайдено: <span class="font-semibold text-gray-600">@Model.Rows.Count</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">#</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Користувач</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Роль</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Дія</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Сутність</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Опис</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дата</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-clipboard-list text-4xl opacity-30"></i>
+                                <p class="text-sm font-medium">Записи не знайдено</p>
+                                <p class="text-[11px]">Спробуйте змінити параметри фільтрації</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        var actionColor = row.Action switch
+                        {
+                            "Create" => "bg-green-50 text-green-700",
+                            "Update" => "bg-blue-50 text-blue-700",
+                            "Delete" => "bg-red-50 text-red-700",
+                            "Login" => "bg-purple-50 text-purple-700",
+                            "Logout" => "bg-gray-50 text-gray-700",
+                            "Backup" => "bg-yellow-50 text-yellow-700",
+                            "Restore" => "bg-orange-50 text-orange-700",
+                            _ => "bg-gray-50 text-gray-700"
+                        };
+
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-semibold text-gray-500 font-mono">@row.LogId</p>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-medium text-gray-900">@row.UserFullName</p>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700">
+                                    @row.Role
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold @actionColor">
+                                    @row.Action
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700">
+                                    @row.Entity@(row.EntityId.HasValue ? $" #{row.EntityId}" : "")
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm text-gray-600 max-w-xs truncate" title="@row.Description">@row.Description</p>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <p class="text-sm text-gray-900">@row.CreatedAt.ToString("dd.MM.yyyy")</p>
+                                <p class="text-[10px] text-gray-400">@row.CreatedAt.ToString("HH:mm")</p>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <p class="text-[11px] text-gray-400">
+                Показано записів: <span class="font-semibold">@Model.Rows.Count</span>
+            </p>
+            <p class="text-[11px] text-gray-400">
+                Всього: <span class="font-bold text-gray-700">@Model.TotalCount</span>
+            </p>
+        </div>
+    }
+</div>
+
+

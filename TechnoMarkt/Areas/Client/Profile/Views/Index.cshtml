@@ -1,0 +1,191 @@
+@model ClientProfileViewModel
+@{
+    ViewData["Title"] = "Профіль";
+    Layout = "_ClientCabinetLayout";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Профіль</h1>
+        <p class="text-gray-600 mt-1">Керування особистою інформацією та налаштуваннями акаунта</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('@TempData["SuccessMessage"]', 'success');
+            });
+        </script>
+    }
+
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('@TempData["ErrorMessage"]', 'error');
+            });
+        </script>
+    }
+
+
+    
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Особисті дані</h2>
+                <p class="text-sm text-gray-500 mt-1">Основна інформація про ваш профіль</p>
+            </div>
+            <a href="@Url.Action("Edit", "Profile")" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-[#003DA5] hover:bg-[#002A7A] text-white text-sm font-semibold rounded-lg transition-colors">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Редагувати</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">Ім'я</label>
+                    <div class="text-base font-semibold text-gray-900">@Model.FirstName</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">Прізвище</label>
+                    <div class="text-base font-semibold text-gray-900">@Model.LastName</div>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                    <div class="text-base font-semibold text-gray-900">@Model.Email</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">Баланс гаманця</label>
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-[#FFE000] rounded-lg text-black font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                        <span>₴ @Model.WalletBalance.ToString("N0")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Налаштування акаунта</h2>
+        
+        <div class="space-y-4">
+            
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fa-solid fa-envelope text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Змінити Email</h3>
+                        <p class="text-sm text-gray-500">Оновити електронну пошту акаунта</p>
+                    </div>
+                </div>
+                <a href="@Url.Action("ChangeEmail", "Profile")" 
+                   class="px-4 py-2 bg-white border border-gray-300 hover:border-[#003DA5] text-gray-700 hover:text-[#003DA5] text-sm font-semibold rounded-lg transition-colors">
+                    Змінити
+                </a>
+            </div>
+
+            
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i class="fa-solid fa-lock text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Змінити пароль</h3>
+                        <p class="text-sm text-gray-500">Оновити пароль для входу в акаунт</p>
+                    </div>
+                </div>
+                <a href="@Url.Action("ChangePassword", "Profile")" 
+                   class="px-4 py-2 bg-white border border-gray-300 hover:border-[#003DA5] text-gray-700 hover:text-[#003DA5] text-sm font-semibold rounded-lg transition-colors">
+                    Змінити
+                </a>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="bg-white rounded-2xl shadow-sm border-2 border-red-200 p-6">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-xl font-bold text-red-600 mb-2">Видалення акаунта</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Ця дія є незворотною. Всі ваші дані будуть видалені або анонімізовані. 
+                    Якщо у вас є активні замовлення, видалення буде заблоковано.
+                </p>
+                <button type="button" 
+                        onclick="confirmDeleteAccount()"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Видалити акаунт</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="deleteAccountModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-start gap-4 mb-6">
+            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Підтвердження видалення</h3>
+                <p class="text-sm text-gray-600">
+                    Ви впевнені, що хочете видалити свій акаунт? Цю дію неможливо скасувати.
+                </p>
+            </div>
+        </div>
+        
+        <div class="flex gap-3">
+            <button type="button" 
+                    onclick="closeDeleteModal()"
+                    class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
+                Скасувати
+            </button>
+            <form action="@Url.Action("DeleteAccount", "Profile")" method="post" class="flex-1">
+                @Html.AntiForgeryToken()
+                <button type="submit" 
+                        class="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors">
+                    Видалити
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+        function confirmDeleteAccount() {
+            document.getElementById('deleteAccountModal').classList.remove('hidden');
+        }
+        function closeDeleteModal() {
+            document.getElementById('deleteAccountModal').classList.add('hidden');
+        }
+
+        document.getElementById('deleteAccountModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+    </script>
+
+

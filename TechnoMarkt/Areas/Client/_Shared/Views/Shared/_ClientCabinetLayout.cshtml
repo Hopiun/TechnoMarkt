@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechnoMarkt Клієнтський Кабінет</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(1rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Common/_Toast.cshtml")
+
+    @using TechnoMarkt.Shared.Common
+    @{
+        var clientName = ViewData["ClientFullName"]?.ToString() ?? $"{User.FindFirst("LastName")?.Value} {User.FindFirst("FirstName")?.Value}".Trim();
+        var clientEmail = ViewData["ClientEmail"]?.ToString() ?? User.Identity?.Name ?? "клієнт";
+        var clientWallet = ViewData["ClientWallet"]?.ToString() ?? ViewBag.CurrentBalance?.ToString("N0") ?? User.FindFirst("WalletBalance")?.Value ?? "0";
+
+        var clientNav = new List<NavigationItem>
+        {
+            new() { Title = "Мої Замовлення", Action = "Index", Controller = "Orders", Area = "Client", Icon = "fa-clipboard-list" },
+            new() { Title = "Способи оплати", Action = "Index", Controller = "Wallet", Area = "Client", Icon = "fa-wallet" },
+            new() { Title = "Профіль", Action = "Index", Controller = "Profile", Area = "Client", Icon = "fa-user" }
+        };
+    }
+
+    <header class="fixed top-0 left-0 w-full h-16 z-50 bg-[#003DA5] border-b border-blue-800 shadow-sm flex items-center justify-between px-6 font-sans">
+        <div class="flex items-center gap-6">
+            <a href="/Home/Home/Index" class="flex items-center gap-2 flex-shrink-0 no-underline">
+                <i class="fa-solid fa-bolt text-[#FFE000] text-xl"></i>
+                <span class="text-xl font-bold tracking-tight text-white">TechnoMarkt</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex pt-16 min-h-screen">
+
+        <aside class="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-[#002A7A] text-white flex flex-col z-20 border-r border-blue-900 shadow-2xl">
+            <div class="p-4 flex-1 overflow-y-auto">
+
+                <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-[#003DA5] flex items-center justify-center text-white text-xl shadow-md border-2 border-white">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-[14px] font-bold text-gray-900 truncate">@clientName</h4>
+                            <p class="text-[11px] text-gray-500 truncate lowercase">@clientEmail</p>
+                            <div class="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFE000] rounded-lg text-black font-black text-[14px] shadow-sm">
+                                <i class="fa-solid fa-sack-dollar text-[12px]"></i>
+                                <span>₴ @clientWallet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="space-y-1">
+                    @foreach (var item in clientNav)
+                    {
+                        string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
+                        string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+                        bool isActive = currentController == item.Controller && currentAction == item.Action;
+                        string activeClass = isActive ? "bg-white/10 text-white font-semibold" : "text-blue-100 hover:bg-white/5 hover:text-white";
+
+                        <a href="/@item.Area/@item.Controller/@item.Action"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors @activeClass no-underline">
+                            <div class="w-6 text-center">
+                                <i class="fa-solid @item.Icon text-lg"></i>
+                            </div>
+                            <span class="font-medium text-sm">@item.Title</span>
+                        </a>
+                    }
+                </nav>
+            </div>
+            
+            <div class="p-4 border-t border-white/5">
+                <form action="/Account/Logout" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-200 hover:bg-red-500/10 hover:text-white transition-colors font-medium text-sm">
+                        <div class="w-6 text-center">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </div>
+                        <span>Вийти з акаунта</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="flex-1 ml-64 p-8 bg-gray-50">
+            @RenderBody()
+        </main>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        function showToast(message, type = 'success') {
+            const config = {
+                success: { bg: 'bg-green-950/90', border: 'border-green-500/30', text: 'text-green-100', icon: 'fa-circle-check',        iconColor: 'text-green-400', btn: 'text-green-500 hover:text-green-300' },
+                error:   { bg: 'bg-red-950/90',   border: 'border-red-500/30',   text: 'text-red-100',   icon: 'fa-circle-xmark',         iconColor: 'text-red-400',   btn: 'text-red-500 hover:text-red-300'   },
+                warning: { bg: 'bg-amber-950/90', border: 'border-amber-500/30', text: 'text-amber-100', icon: 'fa-triangle-exclamation', iconColor: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-300'},
+                info:    { bg: 'bg-blue-950/90',  border: 'border-blue-500/30',  text: 'text-blue-100',  icon: 'fa-circle-info',          iconColor: 'text-blue-400',  btn: 'text-blue-500 hover:text-blue-300' },
+            };
+
+            const c = config[type] ?? config.success;
+
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+                container.style.maxWidth = '380px';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast-item pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-xl ${c.bg} border ${c.border} backdrop-blur-sm shadow-xl`;
+            toast.style.animation = 'slideIn 0.25s ease-out';
+            toast.innerHTML = `
+                <i class="fa-solid ${c.icon} ${c.iconColor} mt-0.5 flex-shrink-0"></i>
+                <p class="text-sm ${c.text} flex-1">${message}</p>
+                <button onclick="this.closest('.toast-item').remove()" class="${c.btn} transition-colors flex-shrink-0">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>`;
+
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.isConnected) toast.remove(); }, 5000);
+        }
+    </script>
+</body>
+</html>
+

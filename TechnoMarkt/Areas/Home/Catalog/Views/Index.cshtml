@@ -1,0 +1,201 @@
+@model HomeCatalogViewModel
+@{
+    Layout = "_HomePageLayout";
+    ViewData["Title"] = "Каталог товарів";
+}
+
+<div class="min-h-[calc(100vh-64px-60px)] flex">
+
+    <aside class="w-72 flex-shrink-0 p-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden sticky top-20">
+
+            <div class="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-[#003DA5]"></i> Категорії
+                </h3>
+            </div>
+
+            <div id="categories-list" class="max-h-56 overflow-y-auto py-2 px-2 border-b border-gray-200">
+                @await Html.PartialAsync("_Categories", Model.Categories, new ViewDataDictionary(ViewData) { { "SelectedCategoryId", ViewBag.CategoryId } })
+            </div>
+
+            <div class="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-[#003DA5]"></i> Фільтри
+                </h3>
+            </div>
+
+            <form id="catalog-filter" class="px-5 py-4 space-y-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="categoryId" id="filter-category-id" value="@ViewBag.CategoryId" />
+                <input type="hidden" name="filter.CurrentPage" value="@Model.Items.Pagination.CurrentPage" id="filter-page" />
+                <input type="hidden" name="filter.PageSize" value="@Model.Items.Pagination.PageSize" />
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Пошук</label>
+                    <div class="relative">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text"
+                               name="_searchProxy"
+                               value="@Model.Items.Filter?.Name"
+                               placeholder="Назва товару..."
+                               class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#003DA5] focus:border-transparent transition-colors" />
+                    </div>
+                    <input type="hidden" name="filter.Name" value="@Model.Items.Filter?.Name" id="filter-name" />
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ціна, ₴</label>
+                    <div class="flex gap-2">
+                        <input type="number" name="filter.MinPrice" value="@Model.Items.Filter?.MinPrice" placeholder="Від" min="0" step="0.01"
+                               class="w-1/2 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-[#003DA5] transition-colors" />
+                        <input type="number" name="filter.MaxPrice" value="@Model.Items.Filter?.MaxPrice" placeholder="До" min="0" step="0.01"
+                               class="w-1/2 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-[#003DA5] transition-colors" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Бренди</label>
+                    <div class="space-y-1 max-h-28 overflow-y-auto pr-1">
+                        @foreach (var brand in Model.Brands)
+                        {
+                            var isSelected = Model.Items.Filter?.BrandIds?.Contains(int.Parse(brand.Value)) == true;
+                            <label class="flex items-center gap-1.5 cursor-pointer py-0.5">
+                                <input type="checkbox" name="filter.BrandIds" value="@brand.Value" @(isSelected ? "checked" : "")
+                                       class="rounded border-gray-300 text-[#003DA5] focus:ring-[#003DA5] w-3.5 h-3.5" />
+                                <span class="text-xs text-gray-600">@brand.Text</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="space-y-1.5 pt-2 border-t border-gray-100">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="hidden" name="filter.InStockOnly" value="false" />
+                        <input type="checkbox" name="filter.InStockOnly" value="true" @(Model.Items.Filter?.InStockOnly == true ? "checked" : "")
+                               class="rounded border-gray-300 text-[#003DA5] focus:ring-[#003DA5] w-3.5 h-3.5" />
+                        <span class="text-xs text-gray-700">В наявності</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="hidden" name="filter.WithDiscountsOnly" value="false" />
+                        <input type="checkbox" name="filter.WithDiscountsOnly" value="true" @(Model.Items.Filter?.WithDiscountsOnly == true ? "checked" : "")
+                               class="rounded border-gray-300 text-[#003DA5] focus:ring-[#003DA5] w-3.5 h-3.5" />
+                        <span class="text-xs text-gray-700">Зі знижкою</span>
+                    </label>
+                </div>
+
+                <input type="hidden" name="filter.SortAscending" id="sort-asc" value="@(Model.Items.Filter?.SortAscending.ToString().ToLower() ?? "true")" />
+            </form>
+        </div>
+    </aside>
+
+    <div class="flex-1 min-w-0 p-4">
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                @(Model.Items.SelectedCategory != null ? Model.Items.SelectedCategory.Name : "")
+            </h1>
+            <div class="flex items-center gap-3">
+                <select id="sort-select" onchange="changeSort(this.value)" class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#003DA5] transition-colors">
+                    <option value="Name" selected="@(Model.Items.Filter?.SortBy == ItemsSortBy.Name)">За назвою</option>
+                    <option value="Price" selected="@(Model.Items.Filter?.SortBy == ItemsSortBy.Price)">За ціною</option>
+                </select>
+
+                <button type="button" id="sort-toggle-btn" onclick="toggleSortDir()" class="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors" title="Напрям сортування">
+                    <i class="fa-solid @(Model.Items.Filter?.SortAscending == true ? "fa-arrow-down-a-z" : "fa-arrow-down-z-a")"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="items-grid-container">
+            @await Html.PartialAsync("_ItemsGrid", Model.Items)
+        </div>
+    </div>
+</div>
+
+<div id="modal-container"></div>
+
+<script>
+        let filterTimeout = null;
+
+        function initCatalogFilter() {
+            const form = document.getElementById('catalog-filter');
+
+            form.addEventListener('input', (e) => {
+                if (e.target.name === '_searchProxy') {
+                    document.getElementById('filter-name').value = e.target.value;
+                    clearTimeout(filterTimeout);
+                    filterTimeout = setTimeout(() => {
+                        resetPageAndFilter();
+                    }, 400);
+                } else if (e.target.type === 'number' || e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+                    resetPageAndFilter();
+                }
+            });
+
+            form.addEventListener('submit', (e) => e.preventDefault());
+        }
+
+        function toggleSortDir() {
+            const input = document.getElementById('sort-asc');
+            const btnIcon = document.querySelector('#sort-toggle-btn i');
+
+            if (input.value === 'true') {
+                input.value = 'false';
+                btnIcon.className = 'fa-solid fa-arrow-down-z-a';
+            } else {
+                input.value = 'true';
+                btnIcon.className = 'fa-solid fa-arrow-down-a-z';
+            }
+
+            resetPageAndFilter();
+        }
+
+        function changeSort(sortBy) {
+            resetPageAndFilter();
+        }
+
+        function resetPageAndFilter() {
+            document.getElementById('filter-page').value = 1;
+            applyFilter();
+        }
+
+        async function applyFilter() {
+            const form = document.getElementById('catalog-filter');
+            const params = new URLSearchParams(new FormData(form));
+            params.set('filter.SortBy', document.getElementById('sort-select').value);
+            params.set('filter.SortAscending', document.getElementById('sort-asc').value);
+
+            const result = await fetch('/Home/Catalog/FilterItems?' + params.toString());
+            const html = await result.text();
+            document.getElementById('items-grid-container').innerHTML = html;
+        }
+
+        function setCategory(id) {
+            document.getElementById('filter-category-id').value = id || '';
+            resetPageAndFilter();
+        }
+
+        function goToPage(page) {
+            document.getElementById('filter-page').value = page;
+            applyFilter();
+        }
+
+        async function openItemDetails(itemId) {
+            const url = `/Home/Catalog/ItemDetails?itemId=${itemId}`;
+            const result = await fetch(url);
+            if (result.ok) {
+                document.getElementById('modal-container').innerHTML = await result.text();
+            }
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCatalogFilter();
+        });
+    </script>
+

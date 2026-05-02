@@ -1,0 +1,240 @@
+@model OperatorOrdersViewModel
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Замовлення";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Замовлення</h1>
+    <p class="text-sm text-gray-500 mt-1">Обробка замовлень магазину</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Виручка магазину", Value = $"₴{Model.Kpi.TodayPaidTotal:N0}",
+    Caption = "за сьогодні", Color = "bg-green-50 text-green-600", Icon = "fa-sack-dollar" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Активні замовлення", Value = Model.Kpi.TodayActiveCount.ToString(),
+        Caption = "за сьогодні", Color = "bg-blue-50 text-blue-600", Icon = "fa-cart-shopping" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Готівка", Value = $"₴{Model.Kpi.TodayPaidCashTotal:N0}",
+        Caption = null, Color = "bg-amber-50 text-amber-600", Icon = "fa-money-bill-wave" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Безготівка", Value = $"₴{Model.Kpi.TodayPaidCardTotal:N0}",
+        Caption = null, Color = "bg-purple-50 text-purple-600", Icon = "fa-credit-card" })
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-xl border border-gray-200 lg:col-span-2">
+        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-5">
+            Розподіл по статусах (сьогодні)
+        </h4>
+        <div class="space-y-3">
+            @{
+                var statusConfig = new Dictionary<OrderStatus, (string Label, string Bg, string Text, string Icon)>
+                {
+                    [OrderStatus.New] = ("Нові", "bg-blue-50", "text-blue-600", "fa-circle-plus"),
+                    [OrderStatus.Processing] = ("Формується", "bg-amber-50", "text-amber-600", "fa-spinner"),
+                    [OrderStatus.Ready] = ("Готове до видачі", "bg-teal-50", "text-teal-600", "fa-box-open"),
+                    [OrderStatus.Completed] = ("Завершено", "bg-green-50", "text-green-600", "fa-circle-check"),
+                    [OrderStatus.Returned] = ("Повернуто", "bg-orange-50", "text-orange-600", "fa-rotate-left"),
+                    [OrderStatus.Cancelled] = ("Скасовано", "bg-red-50", "text-red-500", "fa-circle-xmark"),
+                };
+                int totalOrders = Model.OrderCountByStatus.Values.Sum();
+            }
+            @foreach (var (status, configuration) in statusConfig)
+            {
+                int count = Model.OrderCountByStatus.TryGetValue(status, out var c) ? c : 0;
+                int pct = totalOrders > 0 ? (int)Math.Round(count * 100.0 / totalOrders) : 0;
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 w-44 px-2.5 py-1 rounded-full @configuration.Bg @configuration.Text text-[11px] font-semibold">
+                        <i class="fa-solid @configuration.Icon text-[10px]"></i>
+                        @configuration.Label
+                    </span>
+                    <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full @configuration.Bg @(configuration.Text.Replace("text-", "bg-")) rounded-full transition-all"
+                             style="width: @pct%; background: currentColor;"
+                             data-status-bar="@status"></div>
+                    </div>
+                    <span class="text-sm font-bold text-gray-900 w-7 text-right">@count</span>
+                </div>
+            }
+        </div>
+        <p class="text-[10px] text-gray-400 mt-4">Всього замовлень за сьогодні: <span class="font-semibold">@totalOrders</span></p>
+    </div>
+</div>
+
+<div id="orders-table-container">
+    @await Html.PartialAsync("Tables/_Orders", Model.OrdersTable)
+</div>
+
+<script>
+    let ordersFetchTimeout = null;
+    const colorMap = {
+        'New':        '#3B82F6',
+        'Processing': '#F59E0B',
+        'Ready':      '#14B8A6',
+        'Completed':  '#22C55E',
+        'Returned':   '#F97316',
+        'Cancelled':  '#EF4444',
+    };
+
+    function applyStatusColors() {
+        document.querySelectorAll('[data-status-bar]').forEach(bar => {
+            bar.style.background = colorMap[bar.dataset.statusBar] ?? '#9CA3AF';
+        });
+    }
+
+    async function postAction(url, data) {
+        const body = data instanceof URLSearchParams ? data : new URLSearchParams(data);
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            body,
+            headers: { 'RequestVerificationToken': token }
+        });
+        return res.json();
+    }
+
+    async function filterOrders() {
+        const form = document.getElementById('orders-filter');
+        if (!form) return;
+
+        const result = await fetch('/Operator/Orders/Filter', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form))
+        });
+
+        const html = await result.text();
+        document.getElementById('orders-table-container').innerHTML = html;
+        applyStatusColors(); 
+    }
+
+    function applyOrdersFilter() {
+        filterOrders();
+    }
+
+    function resetOrdersFilter() {
+        window.location.href = window.location.pathname;
+    }
+
+    async function refreshDetails(orderId) {
+        const row = document.querySelector(`.details-row[data-for-order="${orderId}"]`);
+        if (!row) return;
+        const html = await fetch(`/Operator/Orders/Details?orderId=${orderId}`).then(r => r.text());
+        row.querySelector('td').innerHTML = html;
+    }
+
+    function showToast(message, type) {
+        alert(`${type === 'success' ? '✅' : '❌'} ${message}`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyStatusColors();
+
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#orders-filter')) {
+                clearTimeout(ordersFetchTimeout);
+                ordersFetchTimeout = setTimeout(() => filterOrders(), 400);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('#orders-filter')) {
+                clearTimeout(ordersFetchTimeout);
+                ordersFetchTimeout = setTimeout(() => filterOrders(), 400);
+            }
+        });
+    });
+
+    const ordersContainer = document.getElementById('orders-table-container');
+    if (ordersContainer) {
+        ordersContainer.addEventListener('click', async (e) => {
+            const target = e.target;
+
+            const detailsBtn = target.closest('.details-btn');
+            if (detailsBtn) {
+                const orderId = detailsBtn.dataset.orderId;
+                const clickedRow = detailsBtn.closest('tr');
+                const existingDetails = clickedRow.nextElementSibling;
+
+                if (existingDetails?.classList.contains('details-row') && existingDetails.dataset.forOrder === orderId) {
+                    existingDetails.remove();
+                } else {
+                    document.querySelectorAll('.details-row').forEach(r => r.remove());
+
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.className = 'details-row';
+                    detailsRow.dataset.forOrder = orderId;
+                    detailsRow.innerHTML = `<td colspan="10" class="p-0"><div class="p-4 text-center">Завантаження...</div></td>`;
+                    clickedRow.insertAdjacentElement('afterend', detailsRow);
+                    await refreshDetails(orderId);
+                }
+                return;
+            }
+
+            if (target.closest('.close-details-btn')) {
+                target.closest('.details-row')?.remove();
+                return;
+            }
+
+            const advBtn = target.closest('.advance-btn, .advance-status-btn');
+            if (advBtn) {
+                const id = advBtn.dataset.orderId;
+                const result = await postAction('/Operator/Orders/AdvanceOrderStatus', { orderId: id });
+                showToast(result.message, result.success ? 'success' : 'error');
+                if (result.success) { await refreshDetails(id); await filterOrders(); }
+                return;
+            }
+
+            const payBtn = target.closest('.pay-btn, .complete-order-btn');
+            if (payBtn) {
+                const orderId = payBtn.dataset.orderId;
+                const selected = document.querySelector(`input[name="payMethod_${orderId}"]:checked`)
+                                 || document.querySelector('.payment-method-select');
+
+                const method = selected?.value ?? 'Cash';
+                const paymentMethodId = selected?.dataset.paymentMethodId ?? null;
+
+                if (!confirm(`Завершити замовлення? Метод: ${method}`)) return;
+
+                const body = new URLSearchParams({ orderId, method });
+                if (paymentMethodId) body.append('paymentMethodId', paymentMethodId);
+
+                const result = await postAction('/Operator/Orders/CompleteOrder', body);
+                showToast(result.message, result.success ? 'success' : 'error');
+                if (result.success) {
+                    document.querySelector(`.details-row[data-for-order="${orderId}"]`)?.remove();
+                    await filterOrders();
+                }
+                return;
+            }
+
+            const cancelBtn = target.closest('.cancel-btn');
+            if (cancelBtn) {
+                if (!confirm('Скасувати замовлення?')) return;
+                const id = cancelBtn.dataset.orderId;
+                const result = await postAction('/Operator/Orders/CancelOrder', { orderId: id });
+                showToast(result.message, result.success ? 'success' : 'error');
+                if (result.success) {
+                    document.querySelector(`.details-row[data-for-order="${id}"]`)?.remove();
+                    await filterOrders();
+                }
+                return;
+            }
+
+            
+            const returnBtn = target.closest('.return-btn');
+            if (returnBtn) {
+                if (!confirm('Оформити повернення?')) return;
+                const id = returnBtn.dataset.orderId;
+                const result = await postAction('/Operator/Orders/ReturnOrder', { orderId: id });
+                showToast(result.message, result.success ? 'success' : 'error');
+                if (result.success) { await refreshDetails(id); await filterOrders(); }
+                return;
+            }
+        });
+    }
+</script>

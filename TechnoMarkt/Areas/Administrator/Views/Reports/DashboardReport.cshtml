@@ -1,0 +1,196 @@
+@model DashboardViewModel
+
+@{
+    Layout = null;
+    string generatedAt = DateTime.Now.ToString("dd.MM.yyyy HH:mm");
+}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <title>Головний звіт — TechnoMarkt</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 13px;
+            color: #000;
+            background: #fff;
+            padding: 40px;
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo-block { display: flex; align-items: center; gap: 15px; }
+        .logo-icon {
+            width: 48px; height: 48px;
+            border: 2px solid #000;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; font-family: sans-serif;
+        }
+        .logo-text { font-size: 24px; font-weight: bold; text-transform: uppercase; font-family: sans-serif; letter-spacing: 1px; }
+        .logo-sub { font-size: 12px; font-family: sans-serif; }
+        .report-meta { text-align: right; font-family: sans-serif; }
+        .report-title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .report-details { font-size: 12px; }
+
+        .section-heading { font-size: 14px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; margin-bottom: 15px; padding-bottom: 5px; font-family: sans-serif;}
+        .kpi-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-family: sans-serif; }
+        .kpi-table th, .kpi-table td { border: 1px solid #000; padding: 10px; text-align: center; }
+        .kpi-table th { background: #f0f0f0; font-size: 11px; text-transform: uppercase; }
+        .kpi-table td.val { font-size: 16px; font-weight: bold; }
+        
+        .chart-meta-text { font-size: 12px; font-style: italic; margin-bottom: 8px; font-family: sans-serif; }
+        .charts-row { display: flex; gap: 20px; margin-bottom: 30px; }
+        .chart-box { flex: 1; border: 1px solid #000; padding: 15px; background: #fff; }
+        .chart-title { font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 5px; font-family: sans-serif; text-transform: uppercase; }
+        .chart-wrap { position: relative; height: 220px; width: 100%; }
+
+        .data-table { width: 100%; border-collapse: collapse; font-family: sans-serif; margin-bottom: 30px; }
+        .data-table th, .data-table td { border: 1px solid #000; padding: 6px 8px; font-size: 12px; text-align: left; }
+        .data-table th { background: #f0f0f0; font-weight: bold; text-transform: uppercase; }
+        .data-table th.right, .data-table td.right { text-align: right; }
+        .data-table th.center, .data-table td.center { text-align: center; }
+        .data-table tbody tr:nth-child(even) { background: #fafafa; }
+
+        .report-footer {
+            margin-top: 40px; padding-top: 15px; border-top: 1px solid #000;
+            display: flex; justify-content: space-between; font-family: sans-serif; font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <div class="logo-block">
+            <div class="logo-icon">TM</div>
+            <div>
+                <div class="logo-text">TechnoMarkt</div>
+                <div class="logo-sub">Загальний моніторинг діяльності</div>
+            </div>
+        </div>
+        <div class="report-meta">
+            <div class="report-title">ЗАГАЛЬНИЙ ЗВІТ #@DateTime.Now.ToString("MMdd-HHmm")</div>
+            <div class="report-details">
+                <strong>Сформовано:</strong> @generatedAt
+            </div>
+        </div>
+    </div>
+
+    <div class="section-heading">1. ЗВЕДЕНІ ПОКАЗНИКИ</div>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Місячна виручка</th>
+                <th>Середній чек (міс.)</th>
+                <th>Завершені замовлення (міс.)</th>
+                <th>Критичний залишок (шт)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="val">₴@Model.Kpi.MonthlyRevenue.ToString("N2")</td>
+                <td class="val">₴@Model.Kpi.AverageOrder.ToString("N2")</td>
+                <td class="val">@Model.Kpi.CompletedOrdersCount</td>
+                <td class="val">@Model.Kpi.CriticalStockCount</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-heading">2. ГРАФІЧНА АНАЛІТИКА</div>
+    
+    <div class="charts-row">
+        <div class="chart-box">
+            <div class="chart-title">Динаміка продажів</div>
+            <div class="chart-meta-text">Показано дані за останні 7 днів.</div>
+            <div class="chart-wrap"><canvas id="dailySalesChart"></canvas></div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">Продажі за категоріями</div>
+            <div class="chart-meta-text">Розподіл виручки за категоріями товарів.</div>
+            <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="section-heading">3. ДЕТАЛІЗАЦІЯ ОСТАННІХ ТРАНЗАКЦІЙ</div>
+    <div class="chart-meta-text">Відображено останні успішні транзакції магазину. Загальна кількість записів у звіті: @Model.RecentTransactions.Count().</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID Транзакції</th>
+                <th>ID Замовлення</th>
+                <th class="center">Дата</th>
+                <th class="center">Час</th>
+                <th class="center">Метод</th>
+                <th class="center">Статус</th>
+                <th class="right">Сума (UAH)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(!Model.RecentTransactions.Any())
+            {
+                <tr><td colspan="7" class="center">Немає останніх транзакцій</td></tr>
+            }
+            @foreach(var tx in Model.RecentTransactions.Take(20))
+            {
+                string statusLabel = tx.Status switch {
+                    PaymentStatus.Completed => "Завершено",
+                    PaymentStatus.Pending => "Очікується",
+                    PaymentStatus.Failed => "Помилка",
+                    PaymentStatus.Refunded => "Повернуто",
+                    _ => "Невідомо"
+                };
+                <tr>
+                    <td>@tx.PaymentId</td>
+                    <td>@tx.OrderId</td>
+                    <td class="center">@tx.PaidAt.ToString("dd.MM.yyyy")</td>
+                    <td class="center">@tx.PaidAt.ToString("HH:mm")</td>
+                    <td class="center">@(tx.Method == PayMethod.Cash ? "Готівка" : "Карта")</td>
+                    <td class="center">@statusLabel</td>
+                    <td class="right">@tx.Amount.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="report-footer">
+        <div>Відповідальна особа: ______________ / __________________/</div>
+        <div>Згенеровано в системі TechnoMarkt ERP</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        Chart.defaults.color = '#000';
+        Chart.defaults.font.family = 'sans-serif';
+
+        const dailySalesRaw = @Html.Raw(JsonSerializer.Serialize(Model.DailySales.OrderBy(x => x.Key).Select(x => new { key = x.Key.ToString("dd.MM"), value = x.Value })));
+        const categoryRaw = @Html.Raw(JsonSerializer.Serialize(Model.SalesByCategory.Select(x => new { category = x.Key, sales = x.Value })));
+
+        window.addEventListener('load', () => {
+            new Chart(document.getElementById('dailySalesChart'), {
+                type: 'bar',
+                data: {
+                    labels: dailySalesRaw.map(x => x.key),
+                    datasets: [{ data: dailySalesRaw.map(x => x.value), backgroundColor: '#555', borderColor: '#000', borderWidth: 1 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: categoryRaw.map(x => x.category),
+                    datasets: [{ data: categoryRaw.map(x => x.sales), backgroundColor: ['#222', '#555', '#888', '#aaa', '#ddd'], borderColor: '#000', borderWidth: 1 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+        });
+    </script>
+</body>
+</html>

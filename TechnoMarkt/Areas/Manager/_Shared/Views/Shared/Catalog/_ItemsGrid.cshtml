@@ -1,0 +1,167 @@
+@model ItemsGridVM<ManagerItemsFilter>
+
+@if (Model.SelectedCategory != null)
+{
+    <div class="order-1 flex items-center justify-between bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight">@Model.SelectedCategory.Name</h2>
+                @if (Model.SelectedCategory.Discount != null && Model.SelectedCategory.Discount.Id > 0)
+                {
+                    <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-tag"></i> -@Model.SelectedCategory.Discount.Percent% (до @Model.SelectedCategory.Discount.DateTo.ToString("dd.MM"))</span>
+                }
+            </div>
+            <p class="text-[12px] text-gray-400 font-medium tracking-wide uppercase">Знайдено товарів: @Model.SelectedCategory.ItemCount</p>
+        </div>
+        <div class="flex items-center gap-2">
+            @if (Model.SelectedCategory.Discount != null && Model.SelectedCategory.Discount.Id > 0)
+            {
+                <button type="button" onclick="revokeDiscount(null, @Model.SelectedCategory.Id)" class="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-bold transition-colors">
+                    <i class="fa-solid fa-comment-slash"></i> Зняти знижку
+                </button>
+            }
+            else
+            {
+                <button type="button" onclick="openDiscountForm(null, @Model.SelectedCategory.Id)" class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-xs font-bold transition-colors">
+                    <i class="fa-solid fa-tag"></i> Додати знижку
+                </button>
+            }
+            <div class="h-6 w-px bg-gray-200 mx-2"></div>
+            <button type="button" onclick="openCategoryForm(@Model.SelectedCategory.Id)" class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm" title="Редагувати">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" onclick="deleteCategory(@Model.SelectedCategory.Id, '@Model.SelectedCategory.Name')" class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-sm" title="Видалити">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="order-1 flex items-center justify-between bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm">
+        <div>
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight">Усі товари</h2>
+            <p class="text-[12px] text-gray-400 font-medium tracking-wide uppercase">Виберіть категорію для налаштування знижок</p>
+        </div>
+    </div>
+}
+
+<div class="order-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    @if (!Model.Items.Any())
+    {
+        <div class="col-span-full py-16 text-center text-gray-400">
+            <i class="fa-solid fa-box-open text-4xl mb-4 opacity-30"></i>
+            <p class="text-sm font-medium">Товарів не знайдено</p>
+            <p class="text-[11px]">Спробуйте змінити критерії пошуку</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model.Items)
+        {
+            var discountTag = item.Discount != null ? $"-{item.Discount.Percent}%" : "";
+            
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 flex flex-col h-full relative group hover:shadow-md hover:border-blue-200 transition-all">
+                @if (item.Discount != null)
+                {
+                    <span class="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm z-10">
+                        @discountTag
+                    </span>
+                }
+                
+                <div class="h-36 flex items-center justify-center mb-4 p-2 bg-gray-50/50 rounded-lg group-hover:bg-white transition-colors">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl)) {
+                        <img src="@item.ImageUrl" alt="@item.Name" class="max-h-full max-w-full object-contain" />
+                    } else {
+                        <i class="fa-solid fa-camera text-gray-200 text-4xl"></i>
+                    }
+                </div>
+                
+                <div class="flex-1">
+                    <h3 class="text-sm font-bold text-gray-900 leading-snug mb-1 line-clamp-2" title="@item.Name">@item.Name</h3>
+                    <p class="text-[11px] text-gray-400 uppercase tracking-wider mb-3">@item.BrandName</p>
+                </div>
+                
+                <div class="mt-auto pt-3 border-t border-gray-50">
+                    <div class="flex justify-between items-end mb-3">
+                        <div>
+                            @if (item.StockStatus == StockStatus.InStock)
+                            {
+                                <p class="text-[11px] font-bold text-emerald-600"><i class="fa-solid fa-check mr-0.5"></i> В наявності (@item.StockQuantity)</p>
+                            }
+                            else if (item.StockStatus == StockStatus.Low)
+                            {
+                                <p class="text-[11px] font-bold text-amber-500"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i> Мало (@item.StockQuantity)</p>
+                            }
+                            else
+                            {
+                                <p class="text-[11px] font-bold text-red-500"><i class="fa-solid fa-xmark mr-0.5"></i> Немає</p>
+                            }
+                        </div>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-amber-500 tracking-tight">₴@item.Price.ToString("N0")</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        @if (item.Discount != null && item.Discount.Id > 0)
+                        {
+                            <button type="button" onclick="revokeDiscount(@item.Id, null)" class="col-span-2 px-3 py-1.5 bg-gray-50 text-gray-600 hover:bg-gray-100 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-xmark"></i> Зняти знижку
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" onclick="openDiscountForm(@item.Id, null)" class="col-span-2 px-3 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-tag"></i> Знижка на товар
+                            </button>
+                        }
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="openItemForm(@item.Id)" class="px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-pen"></i> Редагувати
+                        </button>
+                        <button type="button" onclick="deleteItem(@item.Id, '@item.Name')" class="px-3 py-2 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            Видалити
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@if (Model.Pagination.TotalPages > 1)
+{
+    <div class="order-4 mt-8 flex justify-center w-full pb-2">
+        <div class="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+            <button type="button" 
+                    @(Model.Pagination.HasPreviousPage ? "" : "disabled") 
+                    onclick="goToPage(@(Model.Pagination.CurrentPage - 1))"
+                    class="w-8 h-8 rounded text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <i class="fa-solid fa-angle-left"></i>
+            </button>
+            
+            @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
+            {
+                <button type="button" 
+                        onclick="goToPage(@i)"
+                        class="w-8 h-8 rounded text-[13px] font-bold @(i == Model.Pagination.CurrentPage ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900") transition-colors">
+                    @i
+                </button>
+            }
+            
+            <button type="button" 
+                    @(Model.Pagination.HasNextPage ? "" : "disabled") 
+                    onclick="goToPage(@(Model.Pagination.CurrentPage + 1))"
+                    class="w-8 h-8 rounded text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <i class="fa-solid fa-angle-right"></i>
+            </button>
+        </div>
+    </div>
+}
+
+
+
+

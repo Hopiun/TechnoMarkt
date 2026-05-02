@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechnoMarkt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(1rem);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+    
+    @await Html.PartialAsync("~/Views/Shared/Partials/Common/_Toast.cshtml")
+
+    @using TechnoMarkt.Shared.Common
+    @{
+        string currentRole = ViewData["Role"] as string ?? string.Empty;
+        string fullName = ViewData["FullName"] as string ?? string.Empty;
+        string street = ViewData["Street"] as string ?? string.Empty;
+        string city = ViewData["City"] as string ?? string.Empty;
+        int storeId = ViewData["StoreId"] is int sid ? sid : 0;
+
+        string roleLabel = currentRole switch
+        {
+            "Administrator" => "Адміністратор",
+            "Manager" => "Менеджер",
+            "Operator" => "Оператор",
+            _ => currentRole
+        };
+
+        var adminNav = new List<NavigationItem>
+        {
+            new() { Title = "Дашборд", Action = "Index", Controller = "Dashboard", Area = "Administrator", Icon = "fa-chart-pie" },
+            new() { Title = "Персонал", Action = "Index", Controller = "Employees", Area = "Administrator", Icon = "fa-users" },
+            new() { Title = "Товари та Склад", Action = "Index", Controller = "Warehouse", Area = "Administrator", Icon = "fa-box" },
+            new() { Title = "Замовлення", Action = "Index", Controller = "Orders",    Area = "Administrator", Icon = "fa-clipboard-list" },
+            new() { Title = "Фінанси", Action = "Index", Controller = "Finance",   Area = "Administrator", Icon = "fa-wallet" },
+            new() { Title = "Налаштування", Action = "Index", Controller = "Settings",  Area = "Administrator", Icon = "fa-gear" },
+        };
+
+        var managerNav = new List<NavigationItem>
+        {
+            new() { Title = "Каталог", Action = "Index", Controller = "Catalog", Area = "Manager", Icon = "fa-tags" },
+            new() { Title = "Склад", Action = "Index", Controller = "Warehouse", Area = "Manager", Icon = "fa-box" },
+            new() { Title = "Постачальники", Action = "Index", Controller = "Suppliers", Area = "Manager", Icon = "fa-truck" }
+        };
+
+        var operatorNav = new List<NavigationItem>
+        {
+            new() { Title = "Замовлення", Action = "Index", Controller = "Orders",    Area = "Operator", Icon = "fa-clipboard-list" },
+            new() { Title = "Залишки", Action = "Index", Controller = "Warehouse", Area = "Operator", Icon = "fa-box" },
+        };
+
+        var currentNav = currentRole switch
+        {
+            "Administrator" => adminNav,
+            "Manager" => managerNav,
+            "Operator" => operatorNav,
+            _ => new List<NavigationItem>()
+        };
+    }
+
+    <header class="fixed top-0 left-0 w-full h-16 bg-[#1A2744] text-white z-30 flex items-center justify-between px-6">
+        <div class="flex items-center gap-6">
+            <i class="fa-solid fa-bolt text-[#FFAB00] text-xl"></i>
+            <span class="text-xl font-bold tracking-tight text-white">TechnoMarkt</span>
+        </div>
+
+        <div class="flex items-center gap-6">
+            @if (!string.IsNullOrEmpty(city))
+            {
+                <div class="hidden md:flex items-center gap-2 text-sm text-gray-300">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>@city, @street | ID: @storeId</span>
+                </div>
+            }
+
+            <div class="flex items-center gap-3 border-l border-gray-600/50 pl-6">
+                <div class="text-right">
+                    <p class="text-sm font-medium leading-none text-white">@fullName</p>
+                    <p class="text-[11px] text-gray-400 mt-1">@roleLabel</p>
+                </div>
+                <div class="w-9 h-9 bg-gray-600 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-user text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex pt-16 min-h-screen">
+
+        <aside class="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-[#0D1120] text-gray-300 flex flex-col z-20">
+            <div class="p-4 flex-1 overflow-y-auto">
+                <nav class="space-y-1">
+                    @await Html.PartialAsync("~/Views/Shared/Partials/Layout/_SidebarNav.cshtml", currentNav)
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-gray-800">
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 text-red-500 transition-colors">
+                        <div class="w-6 text-center">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                        </div>
+                        <span class="font-medium text-sm">Вийти</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="flex-1 ml-64 p-8 bg-white">
+            @RenderBody()
+        </main>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        function dismissToast(btn) {
+            const toast = btn.closest('.toast-item');
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(1rem)';
+            toast.style.transition = 'all 0.2s ease-in';
+            setTimeout(() => toast.remove(), 200);
+        }
+
+        function showToast(message, type = 'success') {
+            const config = {
+                success: { bg: 'bg-green-950/90', border: 'border-green-500/30', text: 'text-green-100', icon: 'fa-circle-check',        iconColor: 'text-green-400', btn: 'text-green-500 hover:text-green-300' },
+                error:   { bg: 'bg-red-950/90',   border: 'border-red-500/30',   text: 'text-red-100',   icon: 'fa-circle-xmark',         iconColor: 'text-red-400',   btn: 'text-red-500 hover:text-red-300'   },
+                warning: { bg: 'bg-amber-950/90', border: 'border-amber-500/30', text: 'text-amber-100', icon: 'fa-triangle-exclamation', iconColor: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-300'},
+                info:    { bg: 'bg-blue-950/90',  border: 'border-blue-500/30',  text: 'text-blue-100',  icon: 'fa-circle-info',          iconColor: 'text-blue-400',  btn: 'text-blue-500 hover:text-blue-300' },
+            };
+
+            const c = config[type] ?? config.success;
+
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+                container.style.maxWidth = '380px';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast-item pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-xl ${c.bg} border ${c.border} backdrop-blur-sm shadow-xl`;
+            toast.style.animation = 'slideIn 0.25s ease-out';
+            toast.innerHTML = `
+                <i class="fa-solid ${c.icon} ${c.iconColor} mt-0.5 flex-shrink-0"></i>
+                <p class="text-sm ${c.text} flex-1">${message}</p>
+                <button onclick="dismissToast(this)" class="${c.btn} transition-colors flex-shrink-0">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>`;
+
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.isConnected) dismissToast(toast.querySelector('button')); }, 5000);
+        }
+    </script>
+
+</body>
+</html>
+

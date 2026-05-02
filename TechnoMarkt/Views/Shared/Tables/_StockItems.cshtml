@@ -1,0 +1,318 @@
+@model StockTableVM
+
+@{
+    var zeroCheckboxId = $"zeroStockOnly_{Guid.NewGuid():N}";
+    bool isManager = Model.Role == "Manager";
+    bool isAdminOrManager = Model.Role is "Administrator" or "Manager";
+
+    int colCount = 5
+        + (isManager ? 1 : 0)
+        + (isAdminOrManager ? 1 : 0)
+        + (Model.Role == "Administrator" ? 1 : 0)
+        + (isManager ? 1 : 0);
+
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.Filter?.Name)
+        || Model.Filter?.CriticalStockThreshold != null
+        || Model.Filter?.NotSuppliedDays != null
+        || Model.Filter?.ZeroStockOnly == true
+        || Model.Filter?.SortBy != StockSortBy.Name
+        || Model.Filter?.SortDescending == true;
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4">
+    <form id="stock-filter" class="flex flex-wrap items-end gap-3">
+
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Пошук за назвою</label>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text"
+                       name="filter.Name"
+                       value="@Model.Filter?.Name"
+                       placeholder="Назва товару..."
+                       class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+        </div>
+
+        @if (isAdminOrManager)
+        {
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Крит. залишок ≤, шт.</label>
+                <input type="number" min="1"
+                       name="filter.CriticalStockThreshold"
+                       value="@Model.Filter?.CriticalStockThreshold"
+                       placeholder="напр. 5"
+                       class="w-28 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Не поставл. ≥, днів</label>
+                <input type="number" min="1"
+                       name="filter.NotSuppliedDays"
+                       value="@Model.Filter?.NotSuppliedDays"
+                       placeholder="напр. 60"
+                       class="w-28 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+
+            <div class="flex items-center gap-2 pb-2">
+                <input type="checkbox"
+                       id="@zeroCheckboxId"
+                       name="filter.ZeroStockOnly"
+                       value="true"
+                       @(Model.Filter?.ZeroStockOnly == true ? "checked" : "")
+                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                <label for="@zeroCheckboxId" class="text-sm text-gray-700 whitespace-nowrap select-none cursor-pointer">
+                    Лише нульові
+                </label>
+            </div>
+        }
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Сортування</label>
+            <div class="flex gap-1">
+                <select name="filter.SortBy"
+                        class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                    <option value="@StockSortBy.Name" selected="@(Model.Filter?.SortBy == StockSortBy.Name)">За назвою</option>
+                    <option value="@StockSortBy.Quantity" selected="@(Model.Filter?.SortBy == StockSortBy.Quantity)">За залишком</option>
+                    <option value="@StockSortBy.Price" selected="@(Model.Filter?.SortBy == StockSortBy.Price)">За ціною</option>
+                    <option value="@StockSortBy.LastSupplyDate" selected="@(Model.Filter?.SortBy == StockSortBy.LastSupplyDate)">За датою поставки</option>
+                </select>
+                <button type="button"
+                        id="sort-toggle-btn"
+                        onclick="toggleSort()"
+                        title="Змінити напрямок сортування"
+                        class="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid @(Model.Filter?.SortDescending == true ? "fa-arrow-down-wide-short" : "fa-arrow-up-wide-short")"></i>
+                    <input type="hidden"
+                           id="sort-desc-input"
+                           name="filter.SortDescending"
+                           value="@Model.Filter?.SortDescending.ToString().ToLower()" />
+                </button>
+            </div>
+        </div>
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetStockFilter()"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Скинути</span>
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+            <h4 class="text-sm font-bold text-gray-900 tracking-tight">Залишки на складі</h4>
+            <p class="text-[11px] text-gray-400 mt-0.5">
+                Знайдено позицій: <span class="font-semibold text-gray-600">@Model.Rows.Count</span>
+            </p>
+        </div>
+        @if (!isManager)
+        {
+            <span class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
+                <i class="fa-solid fa-lock text-gray-300 text-xs"></i>
+                Лише перегляд
+            </span>
+        }
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Товар</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Категорія</th>
+                    @if (isManager)
+                    {
+                        <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Постачальник</th>
+                    }
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Ціна</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Залишок</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дата поставки</th>
+                    @if (Model.Role == "Administrator")
+                    {
+                        <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Сума складу</th>
+                    }
+                    @if (isManager)
+                    {
+                        <th class="px-6 py-3"></th>
+                    }
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="@colCount" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-box-open text-4xl opacity-30"></i>
+                                <p class="text-sm font-medium">Товарів не знайдено</p>
+                                <p class="text-[11px]">Спробуйте змінити параметри фільтрації</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        var threshold = Model.Filter?.CriticalStockThreshold ?? 5;
+                        var staleDays = Model.Filter?.NotSuppliedDays ?? 90;
+
+                        bool isZero = row.Quantity == 0;
+                        bool isCritical = !isZero && row.Quantity <= threshold;
+                        bool isStale = row.SupplyDate.HasValue &&
+                        (DateOnly.FromDateTime(DateTime.Today).DayNumber - row.SupplyDate.Value.DayNumber) >= staleDays;
+
+                        string rowBg = isZero ? "bg-red-50/60"
+                        : isCritical ? "bg-amber-50/60"
+                        : "";
+
+                        <tr class="@rowBg hover:bg-gray-50/70 transition-colors">
+
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-box text-gray-400 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900 leading-tight">@row.ItemName</p>
+                                        <p class="text-[11px] text-gray-400">
+                                            склад #@row.WarehouseId · товар #@row.ItemId
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[11px] font-medium">
+                                    @row.Category
+                                </span>
+                            </td>
+
+                            @if (isManager)
+                            {
+                                <td class="px-6 py-4">
+                                    @if (!string.IsNullOrEmpty(row.SupplierName))
+                                    {
+                                        <p class="text-sm text-gray-700">@row.SupplierName</p>
+                                        @if (row.SupplierId.HasValue)
+                                        {
+                                            <p class="text-[11px] text-gray-400">#@row.SupplierId</p>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-300 italic text-sm">—</span>
+                                    }
+                                </td>
+                            }
+
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                                ₴@row.UnitPrice.ToString("N2")
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                @if (isZero)
+                                {
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-600 text-[11px] font-bold">
+                                        <i class="fa-solid fa-circle-xmark text-[10px]"></i> 0 шт.
+                                    </span>
+                                }
+                                else if (isCritical)
+                                {
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+                                        <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> @row.Quantity шт.
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-semibold">
+                                        <i class="fa-solid fa-circle-check text-[10px]"></i> @row.Quantity шт.
+                                    </span>
+                                }
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                @if (row.SupplyDate.HasValue)
+                                {
+                                    <span class="@(isStale ? "text-red-500 font-semibold" : "text-gray-600") text-sm">
+                                        @row.SupplyDate.Value.ToString("dd.MM.yyyy")
+                                    </span>
+                                    @if (isStale)
+                                    {
+                                        <p class="text-[10px] text-red-400 mt-0.5">
+                                            @(DateOnly.FromDateTime(DateTime.Today).DayNumber - row.SupplyDate.Value.DayNumber) днів тому
+                                        </p>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-gray-300 italic text-sm">—</span>
+                                }
+                            </td>
+
+                            @if (Model.Role == "Administrator")
+                            {
+                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                                    ₴@row.TotalValue.ToString("N0")
+                                </td>
+                            }
+
+                            @if (isManager)
+                            {
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <input type="number" id="qty-@row.WarehouseId" min="0" class="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 hidden" placeholder="К-сть" />
+                                        
+                                        <button id="btn-restock-@row.WarehouseId" class="hidden w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors" 
+                                                onclick="restockItem(@row.WarehouseId)" title="Поповнити залишок (+)">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                        
+                                        <button id="btn-adjust-@row.WarehouseId" class="hidden w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" 
+                                                onclick="adjustItem(@row.WarehouseId)" title="Встановити точний залишок (=)">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
+                                        
+                                        <button id="btn-edit-@row.WarehouseId" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                onclick="toggleEditStock(@row.WarehouseId)" title="Коригувати залишок">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        
+                                        <button id="btn-cancel-@row.WarehouseId" class="hidden w-8 h-8 rounded-lg bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                onclick="toggleEditStock(@row.WarehouseId)" title="Скасувати">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <p class="text-[11px] text-gray-400">
+                Показано позицій: <span class="font-semibold">@Model.Rows.Count</span>
+            </p>
+            @if (Model.Role == "Administrator")
+            {
+                <p class="text-[11px] text-gray-400">
+                    Загальна вартість:
+                    <span class="font-bold text-gray-700">₴@Model.Rows.Sum(r => r.TotalValue).ToString("N0")</span>
+                </p>
+            }
+        </div>
+    }
+</div>
+

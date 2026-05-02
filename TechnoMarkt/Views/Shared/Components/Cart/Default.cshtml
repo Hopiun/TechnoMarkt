@@ -1,0 +1,72 @@
+@model CartVM
+
+<div class="bg-white rounded-lg shadow-lg p-3 max-w-sm">
+    @if (Model.Items.Any())
+    {
+        <div class="border-b-2 border-blue-500 pb-2 mb-2">
+            <h6 class="mb-0 text-blue-600 font-semibold">
+                <i class="bi bi-cart3"></i> Корзина (@Model.TotalItems)
+            </h6>
+        </div>
+        
+        <div class="max-h-72 overflow-y-auto mb-2 space-y-2">
+            @foreach (var item in Model.Items)
+            {
+                <div class="py-2 border-b border-gray-200">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium text-sm flex-1">@item.Name</span>
+                        <span class="text-gray-500 text-xs">@item.Quantity шт.</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        @if (item.DiscountPercent > 0)
+                        {
+                            <div class="flex flex-col gap-0.5">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-gray-400 text-xs line-through">@item.OriginalPrice.ToString("N0")</span>
+                                    <span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold">-@item.DiscountPercent%</span>
+                                </div>
+                                <span class="text-red-600 font-semibold">@item.DiscountedPrice.ToString("N0")</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="font-medium">@item.OriginalPrice.ToString("N0")</span>
+                        }
+                        <span class="text-blue-600 font-semibold ml-auto">= @item.LineTotal.ToString("N0")</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="border-t-2 border-gray-200 pt-2">
+            <div class="mb-2 text-base">
+                <strong>Підсумок: ?@Model.TotalAmount.ToString("N0")</strong>
+                @if (Model.TotalDiscount > 0)
+                {
+                    <small class="text-green-600 block">Економія: @Model.TotalDiscount.ToString("N0")</small>
+                }
+            </div>
+            <div class="space-y-2">
+                <a asp-area="Client" asp-controller="Checkout" asp-action="Index" class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm text-center transition">
+                    <i class="bi bi-bag-check"></i> Оформити замовлення
+                </a>
+                <form asp-controller="Cart" asp-action="Clear" method="post" data-ajax="true" data-ajax-update="#cartWidget" data-ajax-mode="replace">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 px-3 rounded text-sm transition">
+                        <i class="bi bi-trash"></i> Очистити корзину
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 text-gray-500">
+            <i class="bi bi-cart-x text-5xl mb-2"></i>
+            <p class="mb-0">Корзина пуста</p>
+        </div>
+    }
+</div>
+
+
+

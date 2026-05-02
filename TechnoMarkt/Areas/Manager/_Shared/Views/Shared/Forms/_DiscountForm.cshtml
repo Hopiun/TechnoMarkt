@@ -1,0 +1,71 @@
+@model DiscountFormVM
+
+@{
+    bool isEdit = Model?.Action == FormAction.Edit;
+    string title = isEdit ? "Редагування знижки" : "Назначення знижки";
+    string submitUrl = isEdit ? $"/Manager/Catalog/EditDiscount" : "/Manager/Catalog/AssignDiscount";
+}
+
+<div class="fixed inset-0 z-50 overflow-y-auto bg-gray-900/50 backdrop-blur-sm flex items-center justify-center form-overlay" onclick="if(event.target===this) closeFormModal()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-amber-50/50">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 tracking-tight">@title</h3>
+            </div>
+            <button type="button" onclick="closeFormModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form action="@submitUrl" method="post" class="p-6" onsubmit="submitDiscountForm(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" value="@Model?.Id" />
+            <input type="hidden" asp-for="ItemId" value="@Model?.ItemId" />
+            <input type="hidden" asp-for="CategoryId" value="@Model?.CategoryId" />
+            <input type="hidden" asp-for="Action" value="@Model?.Action" />
+            
+            <div asp-validation-summary="ModelOnly" class="text-xs text-red-500 mb-4 bg-red-50 p-2 rounded-lg"></div>
+
+            <div class="space-y-4">
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-700">
+                    Назва об'єкту: <span class="font-bold">@Model.Name</span>
+                </div>
+
+                <div>
+                    <label asp-for="Percent" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Відсоток (%) <span class="text-red-400">*</span></label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"><i class="fa-solid fa-percent"></i></span>
+                        <input type="number" asp-for="Percent" value="@Model?.Percent.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white transition-all" placeholder="10" />
+                    </div>
+                    <span asp-validation-for="Percent" class="text-[10px] text-red-500 font-medium mt-1 block"></span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label asp-for="DateFrom" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Початок <span class="text-red-400">*</span></label>
+                        <input type="date" asp-for="DateFrom" class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white transition-all" />
+                        <span asp-validation-for="DateFrom" class="text-[10px] text-red-500 font-medium mt-1 block"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="DateTo" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Кінець <span class="text-red-400">*</span></label>
+                        <input type="date" asp-for="DateTo" class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white transition-all" />
+                        <span asp-validation-for="DateTo" class="text-[10px] text-red-500 font-medium mt-1 block"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    Скасувати
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-lg text-sm font-bold tracking-wide text-white bg-amber-500 hover:bg-amber-600 shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid @(isEdit ? "fa-floppy-disk" : "fa-tag") text-xs"></i>
+                    @(isEdit ? "Зберегти" : "Назначити")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+

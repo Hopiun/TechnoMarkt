@@ -1,0 +1,103 @@
+@model StockKpiVM
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Товари та Склад";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Товари та Склад</h1>
+    <p class="text-sm text-gray-500 mt-1">Перегляд складських залишків та стану запасів магазину</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Вартість складу", Value = $"₴{Model.Kpi.TotalStock:N0}", 
+    Caption = null, Color = "bg-blue-50 text-blue-600", Icon = "fa-boxes-stacked" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Позицій на складі", Value = Model.Kpi.TotalPositionsCount.ToString(), 
+    Caption = null, Color = "bg-green-50 text-green-600", Icon = "fa-list-check" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Крит. залишок", Value = Model.Kpi.CriticalStockCount.ToString(), 
+    Caption = $"позиції кількістю ≤ {Model.KpiFilter?.CriticalStockThreshold ?? 5} оди.", Color = "bg-amber-50 text-amber-600", Icon = "fa-triangle-exclamation" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Застарілі поставки", Value = Model.Kpi.StaleSupplyCount.ToString(), 
+    Caption = $"товари, що не поставлялись > {Model.KpiFilter?.NotSuppliedDays ?? 90} дн.", Color = "bg-red-50 text-red-600", Icon = "fa-clock-rotate-left" })
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-5">
+    <form method="get" asp-area="Administrator" asp-controller="Warehouse" asp-action="Index" class="flex flex-wrap items-end gap-4">
+
+        <input type="hidden" name="filter.Name"                   value="@Model.StockTable.Filter?.Name" />
+        <input type="hidden" name="filter.CategoryId"             value="@Model.StockTable.Filter?.CategoryId" />
+        <input type="hidden" name="filter.SortBy"                 value="@Model.StockTable.Filter?.SortBy" />
+        <input type="hidden" name="filter.SortDescending"         value="@Model.StockTable.Filter?.SortDescending.ToString().ToLower()" />
+        <input type="hidden" name="filter.ZeroStockOnly"          value="@Model.StockTable.Filter?.ZeroStockOnly.ToString().ToLower()" />
+        <input type="hidden" name="filter.CriticalStockThreshold" value="@Model.StockTable.Filter?.CriticalStockThreshold" />
+        <input type="hidden" name="filter.NotSuppliedDays"        value="@Model.StockTable.Filter?.NotSuppliedDays" />
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                Поріг крит. залишку, шт.
+            </label>
+            <input type="number" min="1" max="99" name="kpiFilter.CriticalStockThreshold" value="@(Model.KpiFilter?.CriticalStockThreshold ?? 5)"
+                   class="w-36 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                Застаріло через, днів
+            </label>
+            <input type="number" min="1" max="999" name="kpiFilter.NotSuppliedDays" value="@(Model.KpiFilter?.NotSuppliedDays ?? 90)"
+                   class="w-36 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <button type="submit" asp-area="Administrator" asp-controller="Warehouse" asp-action="Index"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Оновити KPI</span>
+        </button>
+    </form>
+</div>
+
+<div id="stock-table-container">
+    @await Html.PartialAsync("Tables/_StockItems", Model.StockTable)
+</div>
+
+<script>
+    function toggleSort() {
+        const input = document.getElementById('sort-desc-input');
+        const icon  = document.querySelector('#sort-toggle-btn i');
+        const isDesc = input.value === 'true';
+        input.value  = (!isDesc).toString();
+        icon.className = isDesc
+            ? 'fa-solid fa-arrow-up-wide-short'
+            : 'fa-solid fa-arrow-down-wide-short';
+    }
+
+    let stockFetchTimeout = null;
+
+    function initStockFilter() {
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#stock-filter')) {
+                clearTimeout(stockFetchTimeout);
+                stockFetchTimeout = setTimeout(() => filterStock(), 400);
+            }
+        });
+    }
+
+    async function filterStock() {
+        const form = document.getElementById('stock-filter');
+        if (!form) return;
+
+        const result = await fetch('/Administrator/Warehouse/Filter', {
+              method: 'POST',
+              body: new URLSearchParams(new FormData(form))
+        });
+        const html = await result.text();
+        document.getElementById('stock-table-container').innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', initStockFilter);
+</script>
+

@@ -1,0 +1,274 @@
+@model OrdersTableVM
+
+@{
+    var paidOnlyCheckboxId = $"paidOnly_{Guid.NewGuid():N}";
+    var unpaidOnlyCheckboxId = $"unpaidOnly_{Guid.NewGuid():N}";
+
+    bool isAdmin = Model.Role == "Administrator";
+    bool isOperator = Model.Role == "Operator";
+    bool isManager = Model.Role == "Manager";
+    bool isClient = Model.Role == "Client";
+
+    int colCount = 7
+        + (isAdmin || isManager ? 1 : 0)
+        + 1;
+
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.Filter?.Search)
+        || Model.Filter?.Status != null
+        || Model.Filter?.DateFrom != null
+        || Model.Filter?.DateTo != null
+        || Model.Filter?.PaidOnly == true
+        || Model.Filter?.UnpaidOnly == true;
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4">
+    <form id="orders-filter" class="flex flex-wrap items-end gap-3">
+
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Пошук</label>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text"
+                       name="filter.Search"
+                       value="@Model.Filter?.Search"
+                       placeholder="Клієнт..."
+                       class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Статус</label>
+            <select name="filter.Status"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі статуси</option>
+                <option value="@OrderStatus.New" selected="@(Model.Filter?.Status == OrderStatus.New)">Нове</option>
+                <option value="@OrderStatus.Processing" selected="@(Model.Filter?.Status == OrderStatus.Processing)">Формується</option>
+                <option value="@OrderStatus.Ready" selected="@(Model.Filter?.Status == OrderStatus.Ready)">Готове до видачі</option>
+                <option value="@OrderStatus.Completed" selected="@(Model.Filter?.Status == OrderStatus.Completed)">Завершено</option>
+                <option value="@OrderStatus.Returned" selected="@(Model.Filter?.Status == OrderStatus.Returned)">Повернуто</option>
+                <option value="@OrderStatus.Cancelled" selected="@(Model.Filter?.Status == OrderStatus.Cancelled)">Скасовано</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Від</label>
+            <input type="date" name="filter.DateFrom" value="@Model.Filter?.DateFrom?.ToString("yyyy-MM-dd")"
+                   class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">До</label>
+            <input type="date" name="filter.DateTo" value="@Model.Filter?.DateTo?.ToString("yyyy-MM-dd")"
+                   class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        @if (isAdmin || isOperator)
+        {
+            <div class="flex items-center gap-2 pb-2">
+                <input type="checkbox" id="@paidOnlyCheckboxId" name="filter.PaidOnly" value="true"
+                       @(Model.Filter?.PaidOnly == true ? "checked" : "")
+                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                <label for="@paidOnlyCheckboxId" class="text-sm text-gray-700 whitespace-nowrap select-none cursor-pointer">
+                    Тільки оплачені
+                </label>
+            </div>
+            <div class="flex items-center gap-2 pb-2">
+                <input type="checkbox" id="@unpaidOnlyCheckboxId" name="filter.UnpaidOnly" value="true"
+                       @(Model.Filter?.UnpaidOnly == true ? "checked" : "")
+                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                <label for="@unpaidOnlyCheckboxId" class="text-sm text-gray-700 whitespace-nowrap select-none cursor-pointer">
+                    Тільки неоплачені
+                </label>
+            </div>
+        }
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetOrdersFilter()"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Скинути</span>
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+            <h4 class="text-sm font-bold text-gray-900 tracking-tight">Список замовлень</h4>
+            <p class="text-[11px] text-gray-400 mt-0.5">
+                Знайдено: <span class="font-semibold text-gray-600">@Model.Rows.Count</span>
+            </p>
+        </div>
+        @if (isAdmin || isManager)
+        {
+            <span class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
+                <i class="fa-solid fa-lock text-gray-300 text-xs"></i>
+                Лише перегляд
+            </span>
+        }
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">#</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Клієнт</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дата замовлення</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дата доставки</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Статус</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Сума</th>
+                    @if (isAdmin || isManager)
+                    {
+                        <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Оплата</th>
+                    }
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="@colCount" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-clipboard-list text-4xl opacity-30"></i>
+                                <p class="text-sm font-medium">Замовлень не знайдено</p>
+                                <p class="text-[11px]">Спробуйте змінити параметри фільтрації</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var order in Model.Rows)
+                    {
+                        var (statusLabel, statusBg, statusText, statusIcon) = order.OrderStatus switch
+                        {
+                            OrderStatus.New => ("Нове", "bg-blue-50", "text-blue-600", "fa-circle-plus"),
+                            OrderStatus.Processing => ("Формується", "bg-amber-50", "text-amber-600", "fa-spinner"),
+                            OrderStatus.Ready => ("До видачі", "bg-teal-50", "text-teal-600", "fa-box-open"),
+                            OrderStatus.Completed => ("Завершено", "bg-green-50", "text-green-600", "fa-circle-check"),
+                            OrderStatus.Returned => ("Повернуто", "bg-orange-50", "text-orange-600", "fa-rotate-left"),
+                            OrderStatus.Cancelled => ("Скасовано", "bg-red-50", "text-red-500", "fa-circle-xmark"),
+                            _ => ("Невідомо", "bg-gray-50", "text-gray-400", "fa-question")
+                        };
+
+                        bool clientCanCancel = isClient &&
+                        (order.OrderStatus == OrderStatus.New ||
+                        order.OrderStatus == OrderStatus.Processing ||
+                        order.OrderStatus == OrderStatus.Ready);
+
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-semibold text-blue-600">#@order.OrderId</p>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-medium text-gray-900">@order.ClientFullName</p>
+                                @if (order.ClientId.HasValue)
+                                {
+                                    <p class="text-[11px] text-gray-400">#@order.ClientId</p>
+                                }
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <p class="text-sm text-gray-900">@order.OrderDate.ToString("dd.MM.yyyy")</p>
+                                <p class="text-[10px] text-gray-400">@order.OrderDate.ToString("HH:mm")</p>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                @if (order.DeliveryDate.HasValue)
+                                {
+                                    <p class="text-sm text-gray-900">@order.DeliveryDate.Value.ToString("dd.MM.yyyy")</p>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-300 italic text-sm">—</span>
+                                }
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full @statusBg @statusText text-[11px] font-semibold">
+                                    <i class="fa-solid @statusIcon text-[10px]"></i>
+                                    @statusLabel
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 text-right">
+                                <p class="text-sm font-bold text-gray-900">₴@order.OrderTotal.ToString("N0")</p>
+                            </td>
+
+                            @if (isAdmin || isManager)
+                            {
+                                <td class="px-6 py-4 text-center">
+                                    @if (order.IsPaid)
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-[11px] font-semibold">
+                                            <i class="fa-solid fa-circle-check text-[10px]"></i> Оплачено
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-500 text-[11px] font-semibold">
+                                            <i class="fa-solid fa-circle-xmark text-[10px]"></i> Не оплачено
+                                        </span>
+                                    }
+                                </td>
+                            }
+
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+
+                                    <button class="details-btn w-8 h-8 rounded-lg bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                            data-order-id="@order.OrderId"
+                                            data-order-status="@order.OrderStatus"
+                                            title="Деталі замовлення">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+
+                                    @if (clientCanCancel)
+                                    {
+                                        <button class="cancel-btn px-2.5 py-1.5 rounded-lg bg-gray-50 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors text-[11px] font-medium"
+                                                data-order-id="@order.OrderId"
+                                                title="Відмовитись від замовлення">
+                                            Відмовитись
+                                        </button>
+                                    }
+
+                                    @if (isOperator)
+                                    {
+                                        <button class="details-btn w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                                data-order-id="@order.OrderId"
+                                                data-order-status="@order.OrderStatus"
+                                                title="Дії з замовленням">
+                                            <i class="fa-solid fa-gear"></i>
+                                        </button>
+                                    }
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <p class="text-[11px] text-gray-400">
+                Показано замовлень: <span class="font-semibold">@Model.Rows.Count</span>
+            </p>
+            <p class="text-[11px] text-gray-400">
+                Загальна сума: <span class="font-bold text-gray-700">₴@Model.Rows.Sum(o => o.OrderTotal).ToString("N0")</span>
+            </p>
+        </div>
+    }
+</div>
+

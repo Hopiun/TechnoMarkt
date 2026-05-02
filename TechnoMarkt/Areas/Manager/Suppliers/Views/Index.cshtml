@@ -1,0 +1,204 @@
+@model SuppliersTableVM
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Керування постачальниками";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Постачальники</h1>
+    <p class="text-sm text-gray-500 mt-1">Керування партнерами та їхніми каталогами товарів</p>
+</div>
+
+<div id="suppliers-table-container">
+    @await Html.PartialAsync("~/Areas/Manager/_Shared/Views/Shared/Tables/_Suppliers.cshtml", Model)
+</div>
+
+<div id="supplier-form-container"></div>
+
+<script>
+    let filterTimeout = null;
+
+    async function postAction(url, data) {
+        const body = data instanceof FormData ? new URLSearchParams(data) : (data instanceof URLSearchParams ? data : new URLSearchParams(data));
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+        const res = await fetch(url, {
+            method: 'POST',
+            body,
+            headers: { 'RequestVerificationToken': token }
+        });
+        return res;
+    }
+
+    async function filterSuppliers() {
+        const form = document.getElementById('suppliers-filter');
+        if (!form) return;
+
+        const params = new URLSearchParams(new FormData(form));
+        const getResult = await fetch(`/Manager/Suppliers/Filter?${params.toString()}`);
+        const html = await getResult.text();
+        document.getElementById('suppliers-table-container').innerHTML = html;
+    }
+
+    function resetSuppliersFilter() {
+        window.location.href = window.location.pathname;
+    }
+
+    function showToast(message, type) {
+        alert(`${type === 'success' ? '✅ Успіх:' : '❌ Помилка:'} ${message}`);
+    }
+    
+    async function openSupplierForm(supplierId = null) {
+        let url = '/Manager/Suppliers/SupplierForm';
+        if (supplierId) url += `?supplierId=${supplierId}`;
+
+        const html = await fetch(url).then(r => r.text());
+        const container = document.getElementById('supplier-form-container');
+        container.innerHTML = html;
+        
+        setupModalCloseEvents();
+        
+        const form = document.getElementById('supplier-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Збереження...';
+                submitBtn.disabled = true;
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form)
+                    });
+                    
+                    if (res.ok || res.status === 400) {
+                        const json = await res.json();
+                        if (json.success) {
+                            showToast(json.message, 'success');
+                            closeSupplierForm();
+                            await filterSuppliers();
+                        } else {
+                            showToast(json.message || "Помилка валідації.", 'error');
+                        }
+                    } else {
+                        showToast("Виникла непередбачувана помилка на сервері.", 'error');
+                    }
+                } catch(err) {
+                    showToast("Не вдалося відправити форму.", 'error');
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    function closeSupplierForm() {
+        document.getElementById('supplier-form-container').innerHTML = '';
+    }
+
+    function setupModalCloseEvents() {
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', closeSupplierForm);
+        });
+
+        const overlay = document.querySelector('.supplier-form-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeSupplierForm();
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#suppliers-filter')) {
+                clearTimeout(filterTimeout);
+                filterTimeout = setTimeout(() => filterSuppliers(), 400);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('#suppliers-filter')) {
+                clearTimeout(filterTimeout);
+                filterTimeout = setTimeout(() => filterSuppliers(), 400);
+            }
+        });
+        
+        const container = document.getElementById('suppliers-table-container');
+        if (container) {
+            container.addEventListener('click', async (e) => {
+                const target = e.target;
+                
+                const deleteBtn = target.closest('.delete-btn');
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.supplierId;
+                    const name = deleteBtn.dataset.supplierName;
+                    
+                    if (!confirm(`Ви дійсно хочете видалити постачальника "${name}"? Ця дія незворотня.`)) return;
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const formData = new FormData();
+                    formData.append('supplierId', id);
+
+                    try {
+                        const res = await fetch('/Manager/Suppliers/DeleteSupplier', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'RequestVerificationToken': token }
+                        });
+                        const data = await res.json();
+                        showToast(data.message, data.success ? 'success' : 'error');
+                        
+                        if (data.success) {
+                            await filterSuppliers();
+                        }
+                    } catch(err) {
+                        showToast("Помилка при видаленні.", 'error');
+                    }
+                    return;
+                }
+                
+                const detailsBtn = target.closest('.details-btn');
+                if (detailsBtn) {
+                    const supplierId = detailsBtn.dataset.supplierId;
+                    const clickedRow = detailsBtn.closest('tr');
+                    const existingDetails = clickedRow.nextElementSibling;
+                    
+                    if (existingDetails?.classList.contains('items-row') && existingDetails.dataset.forSupplier === supplierId) {
+                        existingDetails.remove();
+                    } else {
+                        document.querySelectorAll('.items-row').forEach(r => r.remove());
+                        
+                        const detailsRow = document.createElement('tr');
+                        detailsRow.className = 'items-row';
+                        detailsRow.dataset.forSupplier = supplierId;
+                        detailsRow.innerHTML = `<td colspan="10" class="p-0 border-b border-gray-100 bg-blue-50/20"><div class="p-8 text-center text-sm font-semibold text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Завантаження каталогу...</div></td>`;
+                        clickedRow.insertAdjacentElement('afterend', detailsRow);
+                        
+                        const html = await fetch(`/Manager/Suppliers/SupplierItemsList?supplierId=${supplierId}`).then(r => r.text());
+                        
+                        const activeRow = document.querySelector(`.items-row[data-for-supplier="${supplierId}"]`);
+                        if (activeRow) {
+                            activeRow.innerHTML = html;
+                        }
+                    }
+                    return;
+                }
+                
+                if (target.closest('.close-details-btn')) {
+                    target.closest('.items-row')?.remove();
+                    return;
+                }
+            });
+        }
+    });
+
+</script>
+
+

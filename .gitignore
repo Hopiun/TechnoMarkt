@@ -1,0 +1,33 @@
+## Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Build outputs (cover both TechnoMarkt and TechnoMarkt.StressTests)
+[Bb]in/
+[Oo]bj/
+TechnoMarkt/bin/
+TechnoMarkt/obj/
+TechnoMarkt.StressTests/bin/
+TechnoMarkt.StressTests/obj/
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## TechnoMarkt specific folders
+TechnoMarkt/wwwroot/lib/
+TechnoMarkt/wwwroot/backup/
+TechnoMarkt/wwwroot/images/
+TechnoMarkt/appsettings.Development.json
+
+## Node.js
+TechnoMarkt/node_modules/
+npm-debug.log*
+
+## OS generated files
+.DS_Store
+Thumbs.db

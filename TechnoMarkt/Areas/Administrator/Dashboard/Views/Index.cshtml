@@ -1,0 +1,172 @@
+@model DashboardViewModel
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Дашборд";
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Фінансова звітність</h1>
+        <p class="text-sm text-gray-500 mt-1">Аналіз доходів, транзакцій та ефективності магазину</p>
+    </div>
+
+    
+    <div class="flex items-center gap-3">
+        <a asp-action="DownloadReport" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm">
+            <i class="fa-solid fa-file-pdf text-base"></i>
+            Завантажити PDF звіт
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Виручка магазину", Value = $"₴{Model.Kpi.MonthlyRevenue:N0}", 
+    Caption = "за поточний місяць", Color = "bg-blue-50 text-blue-600", Icon = "fa-sack-dollar"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() {Title = "Середній чек замовлень", Value = $"₴{Model.Kpi.AverageOrder:N0}",
+    Caption = "за поточний місяць", Color = "bg-purple-50 text-purple-600", Icon = "fa-receipt"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Оброблені замовлення", Value = Model.Kpi.CompletedOrdersCount.ToString(), 
+    Caption = "за поточний місяць", Color = "bg-green-50 text-green-600", Icon = "fa-cart-shopping"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Критичні залишки", Value = Model.Kpi.CriticalStockCount.ToString(), 
+        Caption = "позиції на складі к-кістю ≤ 5", Color = "bg-red-50 text-red-600", Icon = "fa-triangle-exclamation"})
+</div>
+
+
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Динаміка виручки</h4>
+            <span class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">7 днів</span>
+        </div>
+        <div style="position: relative; height: 280px; width: 100%;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Категорії товарів</h4>
+        <div style="position: relative; height: 280px; width: 100%;">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h4 class="text-sm font-bold text-gray-900 tracking-tight">Останні транзакції</h4>
+        <a href="#" class="text-[12px] text-blue-600 font-medium hover:underline">Дивитися всі</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Дата та час</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Замовлення</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Метод</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Статус</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Сума</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach (var tr in Model.RecentTransactions.Take(5))
+                {
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4 text-sm text-gray-500">#@tr.PaymentId</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">@tr.PaidAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="px-6 py-4 text-sm text-blue-600 font-medium">#@tr.OrderId</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <i class="fa-solid @(tr.Method.ToString() == "Cash" ? "fa-money-bill-wave" : "fa-credit-card") mr-2 opacity-50"></i>
+                            @tr.Method
+                        </td>
+                        <td class="px-6 py-4">
+                            @{
+                                string? statusClass = tr.Status.ToString() == "Completed" ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600";
+                            }
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide @statusClass">
+                                @tr.Status
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-bold text-gray-900 text-right">₴@tr.Amount.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const salesRaw = @Html.Raw(Json.Serialize(Model.DailySales.OrderBy(x => x.Key)));
+        const salesLabels = salesRaw.map(x => {
+            const d = new Date(x.key);
+            return d.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
+        });
+        const salesValues = salesRaw.map(x => x.value);
+
+        const catLabels = @Html.Raw(Json.Serialize(Model.SalesByCategory.Keys));
+        const catValues = @Html.Raw(Json.Serialize(Model.SalesByCategory.Values));
+
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
+
+        const salesChart = new Chart(document.getElementById('salesChart'), {
+            type: 'line',
+            data: {
+                labels: salesLabels,
+                datasets: [{
+                    data: salesValues,
+                    borderColor: '#007AFF',
+                    backgroundColor: 'rgba(0, 122, 255, 0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#007AFF',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: '#F2F2F7' }, border: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        const catChart = new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catValues,
+                    backgroundColor: ['#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#FF9500'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 11 } } }
+                }
+            }
+        });
+
+        setTimeout(() => {
+            salesChart.resize();
+            catChart.resize();
+        }, 150);
+    });
+</script>

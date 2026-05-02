@@ -1,0 +1,103 @@
+@model CartVM
+
+<div id="cart-modal-overlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200" onclick="if(event.target === this) closeCartModal()">
+    <div id="cart-modal-content" class="bg-white rounded-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-all duration-200 shadow-2xl flex flex-col max-h-[90vh]">
+        
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-cart-shopping text-blue-600"></i> Кошик
+            </h3>
+            <button type="button" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" onclick="closeCartModal()">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        
+        <div class="px-6 py-4 overflow-y-auto shrink" style="scrollbar-width: thin;">
+            @if (!Model.Items.Any())
+            {
+                <div class="text-center py-10 flex flex-col items-center justify-center text-gray-400">
+                    <i class="fa-solid fa-cart-arrow-down text-5xl mb-4 text-gray-200"></i>
+                    <p class="font-medium text-gray-500">Ваш кошик порожній</p>
+                    <button type="button" onclick="closeCartModal()" class="mt-4 px-5 py-2 rounded-lg bg-blue-50 text-blue-600 text-sm font-semibold hover:bg-blue-100 transition-colors">
+                        Продовжити покупки
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="space-y-3">
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative group">
+
+                            <div class="flex-1 min-w-0 pr-6">
+                                <h4 class="text-sm font-bold text-gray-900 truncate" title="@item.Name">@item.Name</h4>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    @if (item.DiscountPercent > 0)
+                                    {
+                                        <span class="text-xs text-gray-400 line-through">₴@item.OriginalPrice.ToString("N0")</span>
+                                        <span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold">-@item.DiscountPercent%</span>
+                                        <span class="text-sm text-red-600 font-bold">₴@item.DiscountedPrice.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-sm font-bold text-gray-900">₴@item.OriginalPrice.ToString("N0")</span>
+                                    }
+                                    <span class="text-xs text-gray-500">x @item.Quantity</span>
+                                </div>
+                            </div>
+
+                            <div class="text-right shrink-0 mr-8">
+                                <div class="text-sm font-bold text-gray-900">₴@item.LineTotal.ToString("N0")</div>
+                            </div>
+
+                            <form asp-controller="Cart" asp-action="Remove" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" onsubmit="event.preventDefault(); removeCartItemFromModal(@item.ItemId);">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="w-6 h-6 bg-white border border-gray-200 text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-colors" title="Видалити">
+                                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        
+        @if (Model.Items.Any())
+        {
+            <div class="border-t border-gray-100 bg-gray-50 px-6 py-4 shrink-0">
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">Сума без знижок:</span>
+                        <span class="font-semibold">₴@Model.TotalOriginalAmount.ToString("N0")</span>
+                    </div>
+                    @if (Model.TotalDiscount > 0)
+                    {
+                        <div class="flex items-center justify-between text-sm text-green-600">
+                            <span>Знижка:</span>
+                            <span class="font-semibold">-₴@Model.TotalDiscount.ToString("N0")</span>
+                        </div>
+                    }
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span class="text-gray-500 text-sm font-medium">Всього (@Model.TotalItems шт)</span>
+                        <span class="text-2xl font-black text-gray-900 tracking-tight">₴@Model.TotalAmount.ToString("N0")</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <form asp-controller="Cart" asp-action="Clear" method="post" onsubmit="event.preventDefault(); clearCartFromModal();" class="w-full">
+                         @Html.AntiForgeryToken()
+                         <button type="submit" class="w-full h-11 bg-white border border-red-200 text-red-500 font-bold rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center gap-2">
+                             <i class="fa-solid fa-trash-can text-sm"></i> Очистити
+                         </button>
+                    </form>
+                    <a href="/Client/Checkout/Index" class="flex items-center justify-center gap-2 w-full h-11 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20">
+                        Оформити <i class="fa-solid fa-arrow-right text-sm"></i>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
+

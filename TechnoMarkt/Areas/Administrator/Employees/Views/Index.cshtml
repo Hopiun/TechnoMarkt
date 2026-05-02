@@ -1,0 +1,332 @@
+@model EmployeesViewModel
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Персонал";
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">@ViewData["Title"]</h1>
+        <p class="text-sm text-gray-500 mt-1">Управління працівниками магазину</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <button type="button" onclick="openStoreForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-all shadow-sm">
+            <i class="fa-solid fa-store text-base"></i>
+            Редагувати магазин
+        </button>
+        <button type="button" onclick="openEmployeeForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-all shadow-sm">
+            <i class="fa-solid fa-plus text-base"></i>
+            Додати працівника
+        </button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Оператори на зміні", Value = $"{Model.Kpi.OperatorsPresence.Item1}/{Model.Kpi.OperatorsPresence.Item2}",
+    Caption = "активні / всього", Color = "bg-blue-50 text-blue-600", Icon = "fa-headset"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() {Title = "Менеджери на зміні", Value = $"{Model.Kpi.ManagersPresence.Item1}/{Model.Kpi.ManagersPresence.Item2}",
+    Caption = "активні / всього", Color = "bg-purple-50 text-purple-600", Icon = "fa-user-tie"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Середня зарплата", Value = $"₴{Model.Kpi.AverageSalary:N0}",
+    Caption = "по магазину", Color = "bg-green-50 text-green-600", Icon = "fa-money-bill-trend-up"})
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Всього працівників", Value = Model.Employees.Count.ToString(),
+        Caption = "у списку", Color = "bg-amber-50 text-amber-600", Icon = "fa-users"})
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Середня зарплата за ролями</h4>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="salaryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Замовлення операторів (місяць)</h4>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="operatorChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-bold text-gray-900 tracking-tight">Список працівників</h4>
+        </div>
+
+        <form id="employeeFilterForm" asp-action="Filter" method="post" class="flex flex-wrap gap-3">
+            @Html.AntiForgeryToken()
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="filter.Name" value="@Model.EmployeeFilter?.Name" placeholder="Пошук за ім'ям..." class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div class="min-w-[160px]">
+                <select name="filter.Role" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Всі ролі</option>
+                    @foreach (var role in Enum.GetValues<EmployeeRole>())
+                    {
+                        <option value="@role" selected="@(Model.EmployeeFilter?.Role == role)">@role</option>
+                    }
+                </select>
+            </div>
+            <div class="min-w-[160px]">
+                <select name="filter.Status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Всі статуси</option>
+                    @foreach (var status in Enum.GetValues<EmployeeStatus>())
+                    {
+                        <option value="@status" selected="@(Model.EmployeeFilter?.Status == status)">@status</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i> Фільтр
+            </button>
+        </form>
+    </div>
+
+    <div id="employeeTable" class="overflow-x-auto">
+        @await Html.PartialAsync("_EmployeeTable", Model.Employees)
+    </div>
+</div>
+
+<div id="employeeModal"></div>
+<div id="storeModal"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-ajax-unobtrusive@3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+<script>
+        function openEmployeeForm(employeeId) {
+            const url = employeeId ? `/Administrator/Employees/EmployeeForm?employeeId=${employeeId}` : '/Administrator/Employees/EmployeeForm';
+            fetch(url)
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('employeeModal').innerHTML = html;
+                    setTimeout(() => {
+                        const overlay = document.getElementById('employee-modal-overlay');
+                        if (overlay) {
+                            overlay.classList.remove('opacity-0', 'pointer-events-none');
+                        }
+                    }, 50);
+                });
+        }
+
+        function closeEmployeeModal() {
+            const overlay = document.getElementById('employee-modal-overlay');
+            if (overlay) {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => document.getElementById('employeeModal').innerHTML = '', 200);
+            }
+        }
+
+        function openStoreForm() {
+            fetch('/Administrator/Employees/StoreForm')
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP помилка: ${r.status}`);
+                    }
+                    return r.text();
+                })
+                .then(html => {
+                    document.getElementById('storeModal').innerHTML = html;
+                    setTimeout(() => {
+                        const overlay = document.getElementById('store-modal-overlay');
+                        if (overlay) {
+                            overlay.classList.remove('opacity-0', 'pointer-events-none');
+                        } else {
+                            console.error('store-modal-overlay не знайдено!');
+                        }
+                    }, 50);
+                })
+                .catch(err => {
+                    console.error('Помилка завантаження форми магазину:', err);
+                    showToast('Помилка завантаження форми магазину', 'error');
+                });
+        }
+
+        function closeStoreModal() {
+            const overlay = document.getElementById('store-modal-overlay');
+            if (overlay) {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => document.getElementById('storeModal').innerHTML = '', 200);
+            }
+        }
+
+        async function submitStoreForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch(form.action, { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeStoreModal();
+                    location.reload();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                console.error('Помилка:', e);
+                showToast('Помилка під час збереження', 'error');
+            }
+        }
+
+        async function submitEmployeeForm(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch(form.action, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeEmployeeModal();
+                    location.reload();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                console.error("submitEmployeeForm ПОМИЛКА:", e);
+                showToast('Помилка: ' + e.message, 'error');
+            }
+        }
+
+        async function deactivateEmployee(employeeId) {
+            if (!confirm('Ви впевнені, що хочете деактивувати цього працівника? Він втратить доступ до системи.')) return;
+
+            const formData = new FormData();
+            formData.append('employeeId', employeeId);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) formData.append('__RequestVerificationToken', token.value);
+
+            try {
+                const res = await fetch('/Administrator/Employees/DeactivateEmployee', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    location.reload();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('Помилка', 'error');
+            }
+        }
+
+        async function reactivateEmployee(employeeId) {
+            if (!confirm('Реактивувати цього працівника? Його доступ до системи буде відновлений.')) return;
+
+            const formData = new FormData();
+            formData.append('employeeId', employeeId);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) formData.append('__RequestVerificationToken', token.value);
+
+            try {
+                const res = await fetch('/Administrator/Employees/ReactivateEmployee', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    location.reload();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('Помилка', 'error');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const avgData = @Html.Raw(Json.Serialize(Model.AverageSalaryByRole));
+            const roleLabels = Object.keys(avgData).map(k => k === 'Operator' ? 'Оператор' : k === 'Manager' ? 'Менеджер' : 'Адміністратор');
+            const roleValues = Object.values(avgData);
+
+            new Chart(document.getElementById('salaryChart'), {
+                type: 'bar',
+                data: {
+                    labels: roleLabels,
+                    datasets: [{
+                        data: roleValues,
+                        backgroundColor: ['#007AFF', '#5856D6', '#FF9500'],
+                        borderRadius: 8,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { grid: { color: '#F2F2F7' }, border: { display: false }, ticks: { font: { size: 10 }, callback: v => '₴' + v.toLocaleString() } }
+                    }
+                }
+            });
+
+            const opData = @Html.Raw(Json.Serialize(Model.OperatorOrderStats));
+            new Chart(document.getElementById('operatorChart'), {
+                type: 'bar',
+                data: {
+                    labels: opData.map(x => x.fullName),
+                    datasets: [{
+                        label: 'Замовлення',
+                        data: opData.map(x => x.ordersCount),
+                        backgroundColor: '#007AFF',
+                        borderRadius: 6,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#F2F2F7' }, border: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            const filterForm = document.getElementById('employeeFilterForm');
+            if (filterForm) {
+                let filterDebounce = null;
+
+                async function applyEmployeeFilter() {
+                    const formData = new FormData(filterForm);
+                    try {
+                        const res = await fetch('/Administrator/Employees/Filter', { method: 'POST', body: formData });
+                        if (res.ok) document.getElementById('employeeTable').innerHTML = await res.text();
+                    } catch (e) {
+                        console.error('Помилка оновлення таблиці:', e);
+                    }
+                }
+
+                filterForm.querySelectorAll('select').forEach(sel => {
+                    sel.addEventListener('change', applyEmployeeFilter);
+                });
+
+                const nameInput = filterForm.querySelector('input[name="filter.Name"]');
+                if (nameInput) {
+                    nameInput.addEventListener('input', () => {
+                        clearTimeout(filterDebounce);
+                        filterDebounce = setTimeout(applyEmployeeFilter, 400);
+                    });
+                }
+
+                filterForm.addEventListener('submit', e => {
+                    e.preventDefault();
+                    applyEmployeeFilter();
+                });
+            }
+        });
+    </script>
+

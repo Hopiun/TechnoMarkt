@@ -1,0 +1,106 @@
+@model ItemsGridVM<HomeItemsFilter>
+
+@if (Model.SelectedCategory != null)
+{
+    <div class="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight">@Model.SelectedCategory.Name</h2>
+                @if (Model.SelectedCategory.Discount != null && Model.SelectedCategory.Discount.Id > 0)
+                {
+                    <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-tag"></i> -@Model.SelectedCategory.Discount.Percent% (до @Model.SelectedCategory.Discount.DateTo.ToString("dd.MM"))</span>
+                }
+            </div>
+            <p class="text-[12px] text-gray-400 font-medium tracking-wide uppercase">Знайдено товарів: @Model.SelectedCategory.ItemCount</p>
+        </div>
+    </div>
+}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    @foreach (var item in Model.Items)
+    {
+        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer" onclick="openItemDetails(@item.Id)">
+            <div class="relative h-48 bg-gray-100 flex items-center justify-center p-4">
+                @if (item.Discount != null)
+                {
+                    <span class="absolute top-2.5 left-2.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">-@item.Discount.Percent%</span>
+                }
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" class="max-h-full max-w-full object-contain" />
+                }
+                else
+                {
+                    <i class="fa-solid fa-camera text-gray-300 text-4xl"></i>
+                }
+            </div>
+
+            <div class="p-4 flex flex-col flex-1 gap-1.5">
+                <p class="text-sm font-bold text-gray-900 leading-snug line-clamp-2" title="@item.Name">@item.Name</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">@item.BrandName</p>
+
+                <div class="mt-1">
+                    @if (item.Discount != null)
+                    {
+                        <span class="text-xs font-medium text-gray-400 line-through mr-1.5">₴@item.Price.ToString("N0")</span>
+                    }
+                    <span class="text-lg font-extrabold text-[#003DA5]">₴@item.FinalPrice.ToString("N0")</span>
+                </div>
+
+                <p class="text-xs font-semibold flex items-center gap-1 @(item.StockStatus == StockStatus.InStock ? "text-emerald-600" : item.StockStatus == StockStatus.Low ? "text-amber-500" : "text-red-500")">
+                    <i class="fa-solid @(item.StockStatus != StockStatus.OutOfStock ? "fa-circle-check" : "fa-circle-xmark")"></i>
+                    @(item.StockStatus == StockStatus.InStock ? "В наявності" : item.StockStatus == StockStatus.Low ? "Мало" : "Немає")
+                </p>
+
+                <button type="button" onclick="event.stopPropagation(); openItemDetails(@item.Id)" class="mt-auto block w-full py-2.5 bg-[#003DA5] text-white text-sm font-semibold text-center rounded-xl hover:bg-[#002A80] transition-colors">
+                    <i class="fa-solid fa-cart-plus mr-1"></i> Детальніше
+                </button>
+            </div>
+        </div>
+    }
+    @if (!Model.Items.Any())
+    {
+        <div class="col-span-full text-center py-12">
+            <i class="fa-solid fa-box-open text-gray-300 text-6xl mb-4"></i>
+            <p class="text-gray-400 text-sm italic">Товари не знайдено</p>
+        </div>
+    }
+</div>
+
+@if (Model.Pagination.TotalPages > 1)
+{
+    <div class="flex justify-center mt-8">
+        <nav class="flex items-center gap-1">
+            @if (Model.Pagination.CurrentPage > 1)
+            {
+                <button onclick="goToPage(@(Model.Pagination.CurrentPage - 1))" class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            }
+
+            @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
+            {
+                @if (i == Model.Pagination.CurrentPage)
+                {
+                    <span class="px-3 py-2 rounded-lg bg-[#003DA5] text-white text-sm font-bold">@i</span>
+                }
+                else if (i == 1 || i == Model.Pagination.TotalPages || Math.Abs(i - Model.Pagination.CurrentPage) <= 1)
+                {
+                    <button onclick="goToPage(@i)" class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">@i</button>
+                }
+                else if (Math.Abs(i - Model.Pagination.CurrentPage) == 2)
+                {
+                    <span class="px-2 text-gray-400">...</span>
+                }
+            }
+
+            @if (Model.Pagination.CurrentPage < Model.Pagination.TotalPages)
+            {
+                <button onclick="goToPage(@(Model.Pagination.CurrentPage + 1))" class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            }
+        </nav>
+    </div>
+}
+

@@ -1,0 +1,163 @@
+@model TransactionsTableVM
+
+@{
+    bool hasActiveFilter = Model.Filter?.DateFrom != null
+        || Model.Filter?.DateTo != null
+        || Model.Filter?.PaymentMethod != null
+        || Model.Filter?.PaymentStatus != null;
+
+    int colCount = 6;
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4">
+    <form id="transactions-filter" class="flex flex-wrap items-end gap-3">
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Від</label>
+            <input type="date" name="filter.DateFrom" value="@Model.Filter?.DateFrom?.ToString("yyyy-MM-dd")"
+                   class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">До</label>
+            <input type="date" name="filter.DateTo" value="@Model.Filter?.DateTo?.ToString("yyyy-MM-dd")"
+                   class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Метод оплати</label>
+            <select name="filter.PaymentMethod"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі методи</option>
+                <option value="@PayMethod.Cash" selected="@(Model.Filter?.PaymentMethod == PayMethod.Cash)">Готівка</option>
+                <option value="@PayMethod.Card" selected="@(Model.Filter?.PaymentMethod == PayMethod.Card)">Карта</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Статус</label>
+            <select name="filter.PaymentStatus"
+                    class="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Всі статуси</option>
+                <option value="@PaymentStatus.Pending" selected="@(Model.Filter?.PaymentStatus == PaymentStatus.Pending)">Очікується</option>
+                <option value="@PaymentStatus.Completed" selected="@(Model.Filter?.PaymentStatus == PaymentStatus.Completed)">Завершено</option>
+                <option value="@PaymentStatus.Failed" selected="@(Model.Filter?.PaymentStatus == PaymentStatus.Failed)">Помилка</option>
+                <option value="@PaymentStatus.Refunded" selected="@(Model.Filter?.PaymentStatus == PaymentStatus.Refunded)">Повернуто</option>
+            </select>
+        </div>
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetTransactionsFilter()"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Скинути</span>
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+            <h4 class="text-sm font-bold text-gray-900 tracking-tight">Транзакції</h4>
+            <p class="text-[11px] text-gray-400 mt-0.5">
+                Знайдено: <span class="font-semibold text-gray-600">@Model.Rows.Count</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">#</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Замовлення</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Дата та час</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Метод</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Статус</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Сума</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="@colCount" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-receipt text-4xl opacity-30"></i>
+                                <p class="text-sm font-medium">Транзакцій не знайдено</p>
+                                <p class="text-[11px]">Спробуйте змінити параметри фільтрації</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var tx in Model.Rows)
+                    {
+                        var (statusLabel, statusBg, statusText, statusIcon) = tx.Status switch
+                        {
+                            PaymentStatus.Completed => ("Завершено",  "bg-green-50",  "text-green-600",  "fa-circle-check"),
+                            PaymentStatus.Pending   => ("Очікується", "bg-amber-50",  "text-amber-600",  "fa-clock"),
+                            PaymentStatus.Failed    => ("Помилка",    "bg-red-50",    "text-red-500",    "fa-circle-xmark"),
+                            PaymentStatus.Refunded  => ("Повернуто",  "bg-orange-50", "text-orange-600", "fa-rotate-left"),
+                            _                       => ("Невідомо",   "bg-gray-50",   "text-gray-400",   "fa-question")
+                        };
+
+                        bool isCash = tx.Method == PayMethod.Cash;
+
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-semibold text-blue-600">#@tx.PaymentId</p>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-medium text-gray-900">#@tx.OrderId</p>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <p class="text-sm text-gray-900">@tx.PaidAt.ToString("dd.MM.yyyy")</p>
+                                <p class="text-[10px] text-gray-400">@tx.PaidAt.ToString("HH:mm")</p>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold
+                                             @(isCash ? "bg-teal-50 text-teal-700" : "bg-indigo-50 text-indigo-700")">
+                                    <i class="fa-solid @(isCash ? "fa-money-bill-wave" : "fa-credit-card") text-[10px]"></i>
+                                    @(isCash ? "Готівка" : "Карта")
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full @statusBg @statusText text-[11px] font-semibold">
+                                    <i class="fa-solid @statusIcon text-[10px]"></i>
+                                    @statusLabel
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 text-right">
+                                <p class="text-sm font-bold text-gray-900">₴@tx.Amount.ToString("N2")</p>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <p class="text-[11px] text-gray-400">
+                Показано транзакцій: <span class="font-semibold">@Model.Rows.Count</span>
+            </p>
+            <p class="text-[11px] text-gray-400">
+                Загальна сума: <span class="font-bold text-gray-700">₴@Model.Rows.Sum(t => t.Amount).ToString("N2")</span>
+            </p>
+        </div>
+    }
+</div>
+

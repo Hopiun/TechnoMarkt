@@ -1,0 +1,125 @@
+@model ClientOrdersViewModel
+
+@{
+    Layout = "_ClientCabinetLayout";
+    ViewData["Title"] = "Мої Замовлення";
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Мої Замовлення</h1>
+    <p class="text-sm text-gray-500 mt-1">Історія покупок та їх статуси</p>
+</div>
+
+<div id="orders-table-container">
+    @await Html.PartialAsync("_ClientOrdersTable", Model.OrdersTable)
+</div>
+
+<script>
+    let ordersFetchTimeout = null;
+
+    async function postAction(url, data) {
+        const body = data instanceof URLSearchParams ? data : new URLSearchParams(data);
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            body,
+            headers: { 'RequestVerificationToken': token }
+        });
+        return res.json();
+    }
+
+    async function filterOrders() {
+        const form = document.getElementById('orders-filter');
+        if (!form) return;
+
+        const result = await fetch('/Client/Orders/Filter', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form))
+        });
+
+        const html = await result.text();
+        document.getElementById('orders-table-container').innerHTML = html;
+    }
+
+    function applyOrdersFilter() {
+        filterOrders();
+    }
+
+    function resetOrdersFilter() {
+        window.location.href = window.location.pathname;
+    }
+
+    async function refreshDetails(orderId) {
+        const row = document.querySelector(`.details-row[data-for-order="${orderId}"]`);
+        if (!row) return;
+        const html = await fetch(`/Client/Orders/Details?orderId=${orderId}`).then(r => r.text());
+        row.querySelector('td').innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#orders-filter')) {
+                clearTimeout(ordersFetchTimeout);
+                ordersFetchTimeout = setTimeout(() => filterOrders(), 400);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('#orders-filter')) {
+                clearTimeout(ordersFetchTimeout);
+                ordersFetchTimeout = setTimeout(() => filterOrders(), 400);
+            }
+        });
+    });
+
+    const ordersContainer = document.getElementById('orders-table-container');
+    if (ordersContainer) {
+        ordersContainer.addEventListener('click', async (e) => {
+            const target = e.target;
+
+            const detailsBtn = target.closest('.details-btn');
+            if (detailsBtn) {
+                const orderId = detailsBtn.dataset.orderId;
+                const clickedRow = detailsBtn.closest('tr');
+                const existingDetails = clickedRow.nextElementSibling;
+
+                if (existingDetails?.classList.contains('details-row') && existingDetails.dataset.forOrder === orderId) {
+                    existingDetails.remove();
+                } else {
+                    document.querySelectorAll('.details-row').forEach(r => r.remove());
+
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.className = 'details-row';
+                    detailsRow.dataset.forOrder = orderId;
+                    detailsRow.innerHTML = `<td colspan="10" class="p-0"><div class="p-4 text-center">Завантаження...</div></td>`;
+                    clickedRow.insertAdjacentElement('afterend', detailsRow);
+                    await refreshDetails(orderId);
+                }
+                return;
+            }
+
+            if (target.closest('.close-details-btn')) {
+                target.closest('.details-row')?.remove();
+                return;
+            }
+
+            const cancelBtn = target.closest('.cancel-btn');
+            if (cancelBtn) {
+                if (!confirm('Ви впевнені, що хочете відмовитись від цього замовлення?')) return;
+                const id = cancelBtn.dataset.orderId;
+                const result = await postAction('/Client/Orders/CancelOrder', { orderId: id });
+                if (typeof showToast !== 'undefined') {
+                    showToast(result.message, result.success ? 'success' : 'error');
+                } else {
+                    alert((result.success ? "✅ " : "❌ ") + result.message);
+                }
+                if (result.success) {
+                    document.querySelector(`.details-row[data-for-order="${id}"]`)?.remove();
+                    await filterOrders();
+                }
+                return;
+            }
+        });
+    }
+</script>

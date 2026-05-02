@@ -1,0 +1,166 @@
+@model SuppliersTableVM
+
+@{
+    bool isManager = Model.Role == "Manager";
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.Filter?.Search)
+        || Model.Filter?.MinRating.HasValue == true
+        || Model.Filter?.CountryId.HasValue == true;
+}
+
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-4">
+    <div class="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100">
+        <div>
+            <h3 class="text-sm font-bold text-gray-900">Фільтрація та керування</h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">Швидкий пошук та налаштування списку партнерів</p>
+        </div>
+        @if (isManager)
+        {
+            <button type="button" onclick="openSupplierForm()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Додати постачальника
+            </button>
+        }
+    </div>
+
+    <form id="suppliers-filter" class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Пошук</label>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text"
+                       name="filter.Search"
+                       value="@Model.Filter?.Search"
+                       placeholder="Назва, email..."
+                       class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+        </div>
+
+        <div class="w-48">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Країна</label>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"><i class="fa-solid fa-globe"></i></span>
+                <select name="filter.CountryId" asp-items="Model.Filter?.Countries" class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <option value="">Всі країни</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="w-32">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Мін. рейтинг</label>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 text-sm"><i class="fa-solid fa-star"></i></span>
+                <input type="number" step="0.1" min="0" max="5" name="filter.MinRating" value="@Model.Filter?.MinRating?.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+                       class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="0.0" />
+            </div>
+        </div>
+
+        @if (hasActiveFilter)
+        {
+            <button type="button" onclick="resetSuppliersFilter()"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Скинути</span>
+            </button>
+        }
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h4 class="text-sm font-bold text-gray-900 tracking-tight">Реєстр постачальників</h4>
+        <span class="text-[11px] font-medium px-2.5 py-1 rounded bg-blue-50 text-blue-600">
+            Всього: @Model.Rows.Count
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-16">ID</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Організація</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Контакти</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Локація</th>
+                    <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center">Рейтинг</th>
+                    <th class="px-6 py-3 w-10"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-truck-ramp-box text-4xl opacity-30"></i>
+                                <p class="text-sm font-medium">Постачальників не знайдено</p>
+                                <p class="text-[11px]">Спробуйте змінити фільтри пошуку</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        var ratingColor = row.Rating >= 4 ? "text-amber-500" : row.Rating >= 3 ? "text-gray-400" : "text-gray-300";
+
+                        <tr class="hover:bg-blue-50/20 transition-colors group">
+                            <td class="px-6 py-4">
+                                <p class="text-xs font-bold text-gray-400">#@row.SupplierId</p>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-bold text-gray-900">@row.SupplierName</p>
+                                <button class="details-btn text-[10px] text-blue-500 font-semibold uppercase tracking-wider hover:text-blue-700 transition-colors mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100" data-supplier-id="@row.SupplierId">
+                                    <i class="fa-solid fa-box-open"></i> Переглянути товари
+                                </button>
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                @row.Contact
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                <p class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-gray-600 text-xs font-medium">
+                                    <i class="fa-solid fa-location-dot text-gray-400"></i> @row.Country
+                                </p>
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
+                                @if (row.Rating.HasValue)
+                                {
+                                    <div class="flex items-center justify-center gap-1 text-sm font-bold text-gray-900">
+                                        <span>@row.Rating.Value.ToString("0.0")</span>
+                                        <i class="fa-solid fa-star @ratingColor text-xs"></i>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-300 italic text-xs">N/A</span>
+                                }
+                            </td>
+
+                            <td class="px-6 py-4 text-right">
+                                @if (isManager)
+                                {
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button class="w-8 h-8 rounded-lg bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                                                onclick="openSupplierForm(@row.SupplierId)" title="Редагувати">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <button class="delete-btn w-8 h-8 rounded-lg bg-gray-50 text-red-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                                data-supplier-id="@row.SupplierId" data-supplier-name="@row.SupplierName" title="Видалити">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

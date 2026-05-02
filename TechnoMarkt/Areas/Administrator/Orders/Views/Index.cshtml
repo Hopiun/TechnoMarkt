@@ -1,0 +1,234 @@
+@model AdminOrdersViewModel
+
+@{
+    Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
+    ViewData["Title"] = "Замовлення";
+
+    bool hasActiveFilter = !string.IsNullOrEmpty(Model.OrdersTable.Filter?.Search)
+        || Model.OrdersTable.Filter?.Status != null
+        || Model.OrdersTable.Filter?.DateFrom != null
+        || Model.OrdersTable.Filter?.DateTo != null
+        || Model.OrdersTable.Filter?.PaidOnly == true
+        || Model.OrdersTable.Filter?.UnpaidOnly == true;
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Замовлення</h1>
+    <p class="text-sm text-gray-500 mt-1">Перегляд замовлень та аналітика продажів магазину (лише читання)</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Виручка магазину", Value = $"₴{Model.Kpi.TodayPaidTotal:N0}",
+    Caption = "за сьогодні", Color = "bg-green-50 text-green-600", Icon = "fa-sack-dollar" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Активні замовлення", Value = Model.Kpi.TodayActiveCount.ToString(),
+        Caption = "за сьогодні", Color = "bg-blue-50 text-blue-600", Icon = "fa-cart-shopping" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Готівка", Value = $"₴{Model.Kpi.TodayPaidCashTotal:N0}",
+        Caption = null, Color = "bg-amber-50 text-amber-600", Icon = "fa-money-bill-wave" })
+
+    @await Html.PartialAsync("~/Views/Shared/Partials/Cards/_KpiCard.cshtml", new KpiItem() { Title = "Безготівка", Value = $"₴{Model.Kpi.TodayPaidCardTotal:N0}",
+        Caption = null, Color = "bg-purple-50 text-purple-600", Icon = "fa-credit-card" })
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-5">
+            Розподіл по статусах
+        </h4>
+        <div class="space-y-3">
+            @{
+                var statusConfig = new Dictionary<OrderStatus, (string Label, string Bg, string Text, string Icon)>
+                {
+                    [OrderStatus.New] = ("Нові", "bg-blue-50", "text-blue-600", "fa-circle-plus"),
+                    [OrderStatus.Processing] = ("Формується", "bg-amber-50", "text-amber-600", "fa-spinner"),
+                    [OrderStatus.Ready] = ("Готове до видачі", "bg-teal-50", "text-teal-600", "fa-box-open"),
+                    [OrderStatus.Completed] = ("Завершено", "bg-green-50", "text-green-600", "fa-circle-check"),
+                    [OrderStatus.Returned] = ("Повернуто", "bg-orange-50", "text-orange-600", "fa-rotate-left"),
+                    [OrderStatus.Cancelled] = ("Скасовано", "bg-red-50", "text-red-500", "fa-circle-xmark"),
+                };
+                int totalOrders = Model.OrdersCountByStatus.Values.Sum();
+            }
+            @foreach (var (status, configuration) in statusConfig)
+            {
+                int count = Model.OrdersCountByStatus.TryGetValue(status, out var c) ? c : 0;
+                int pct = totalOrders > 0 ? (int)Math.Round(count * 100.0 / totalOrders) : 0;
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 w-44 px-2.5 py-1 rounded-full @configuration.Bg @configuration.Text text-[11px] font-semibold">
+                        <i class="fa-solid @configuration.Icon text-[10px]"></i>
+                        @configuration.Label
+                    </span>
+                    <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full @configuration.Bg @(configuration.Text.Replace("text-", "bg-")) rounded-full transition-all"
+                             style="width: @pct%; background: currentColor;"
+                             data-status-bar="@status"></div>
+                    </div>
+                    <span class="text-sm font-bold text-gray-900 w-7 text-right">@count</span>
+                </div>
+            }
+        </div>
+        <p class="text-[10px] text-gray-400 mt-4">Всього замовлень у магазині: <span class="font-semibold">@totalOrders</span></p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <div class="flex items-start justify-between mb-5">
+            <div>
+                <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Топ-5 замовлень</h4>
+                <p class="text-[10px] text-gray-400 mt-0.5">За сумою за обраний місяць</p>
+            </div>
+            <form method="get" asp-area="Administrator" asp-controller="Orders" asp-action="Index" class="flex items-center gap-1">
+                <input type="hidden" name="filter.Search" value="@Model.OrdersTable.Filter?.Search" />
+                <input type="hidden" name="filter.Status" value="@Model.OrdersTable.Filter?.Status" />
+                <input type="hidden" name="filter.DateFrom" value="@Model.OrdersTable.Filter?.DateFrom" />
+                <input type="hidden" name="filter.DateTo" value="@Model.OrdersTable.Filter?.DateTo" />
+                <input type="hidden" name="filter.PaidOnly" value="@Model.OrdersTable.Filter?.PaidOnly.ToString().ToLower()" />
+                <input type="hidden" name="filter.UnpaidOnly" value="@Model.OrdersTable.Filter?.UnpaidOnly.ToString().ToLower()" />
+
+                <select name="topOrderChartFilter.Month" onchange="this.form.submit()"
+                        class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(Model.TopOrderChartFilter.Month == m)">
+                            @(new DateTime(2000, m, 1).ToString("MMM", new System.Globalization.CultureInfo("uk-UA")))
+                        </option>
+                    }
+                </select>
+                <select name="topOrderChartFilter.Year" onchange="this.form.submit()"
+                        class="px-2 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                    {
+                        <option value="@y" selected="@(Model.TopOrderChartFilter.Year == y)">@y</option>
+                    }
+                </select>
+            </form>
+        </div>
+
+        @if (!Model.TopOrders.Any())
+        {
+            <div class="flex flex-col items-center justify-center py-8 text-gray-400">
+                <i class="fa-solid fa-receipt text-3xl opacity-20 mb-2"></i>
+                <p class="text-sm">Замовлень за цей місяць немає</p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-2">
+                @foreach (var (order, idx) in Model.TopOrders.Take(5).Select((o, i) => (o, i + 1)))
+                {
+                    <div class="flex items-center gap-3 py-2 @(idx < Model.TopOrders.Count ? "border-b border-gray-50" : "")">
+                        <span class="w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                            @idx
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-blue-600 truncate">#@order.OrderId</p>
+                            <p class="text-[11px] text-gray-400 truncate">@order.ClientFullName</p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <p class="text-sm font-bold text-gray-900">₴@order.OrderTotal.ToString("N0")</p>
+                            <p class="text-[10px] text-gray-400">@order.OrderDate.ToString("dd.MM")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+
+<div id="orders-table-container">
+    @await Html.PartialAsync("Tables/_Orders", Model.OrdersTable)
+</div>
+
+<script>
+    document.querySelectorAll('[data-status-bar]').forEach(bar => {
+        const colorMap = {
+            'New':        '#3B82F6',
+            'Processing': '#F59E0B',
+            'Ready':      '#14B8A6',
+            'Completed':  '#22C55E',
+            'Returned':   '#F97316',
+            'Cancelled':  '#EF4444',
+        };
+        bar.style.background = colorMap[bar.dataset.statusBar] ?? '#9CA3AF';
+    });
+
+    let ordersFetchTimeout = null;
+
+    function initOrdersFilter() {
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#orders-filter')) {
+                clearTimeout(ordersFetchTimeout);
+                ordersFetchTimeout = setTimeout(() => filterOrders(), 400);
+            }
+        });
+    }
+
+    async function filterOrders() {
+        const form = document.getElementById('orders-filter');
+        if (!form) return;
+
+        const result = await fetch('/Administrator/Orders/Filter', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form))
+        });
+
+        const html = await result.text();
+        document.getElementById('orders-table-container').innerHTML = html;
+
+        document.querySelectorAll('[data-status-bar]').forEach(bar => {
+            const colorMap = {
+                'New':        '#3B82F6',
+                'Processing': '#F59E0B',
+                'Ready':      '#14B8A6',
+                'Completed':  '#22C55E',
+                'Returned':   '#F97316',
+                'Cancelled':  '#EF4444',
+            };
+            bar.style.background = colorMap[bar.dataset.statusBar] ?? '#9CA3AF';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initOrdersFilter);
+
+    const ordersContainer = document.getElementById('orders-table-container');
+
+    ordersContainer.addEventListener('click', async (e) => {
+
+        if (e.target.closest('.close-details-btn')) {
+            e.target.closest('.details-row')?.remove();
+            return;
+        }
+
+        const btn = e.target.closest('.details-btn');
+        if (!btn) return;
+
+        const orderId    = btn.dataset.orderId;
+        const clickedRow = btn.closest('tr');
+
+        const existingDetails = clickedRow.nextElementSibling;
+        if (existingDetails?.classList.contains('details-row') &&
+            existingDetails.dataset.forOrder === orderId) {
+            existingDetails.remove();
+            return;
+        }
+
+        document.querySelectorAll('.details-row').forEach(r => r.remove());
+
+        btn.classList.add('bg-blue-50', 'text-blue-600');
+
+        try {
+            const html = await fetch(`/Administrator/Orders/Details?orderId=${orderId}`).then(result => result.text());
+
+            const detailsRow = document.createElement('tr');
+            detailsRow.className = 'details-row';
+            detailsRow.dataset.forOrder = orderId;
+            detailsRow.innerHTML = `<td colspan="10" class="p-0">${html}</td>`;
+            clickedRow.insertAdjacentElement('afterend', detailsRow);
+        }
+        finally {
+            btn.classList.remove('bg-blue-50', 'text-blue-600');
+        }
+    });
+</script>

@@ -1,0 +1,149 @@
+@model CartVM
+
+@{
+    ViewData["Title"] = "Корзина";
+}
+
+<div class="container mx-auto px-4 py-6">
+    <h2 class="text-3xl font-bold mb-6"><i class="fa-solid fa-cart-shopping"></i> @ViewData["Title"]</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-8 text-center">
+            <i class="fa-solid fa-cart-arrow-down text-6xl text-blue-400"></i>
+            <h4 class="mt-4 text-xl font-semibold text-blue-700">Ваша корзина пуста</h4>
+            <p class="text-blue-600 mb-4">Додайте товари з каталогу</p>
+            <a asp-area="Home" asp-controller="Home" asp-action="Index" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                <i class="fa-solid fa-store"></i> Перейти до каталогу
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Товар</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ціна</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Кількість</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Сума</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3">
+                                            <strong>@item.Name</strong>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if (item.DiscountPercent > 0)
+                                            {
+                                                <div class="flex flex-col items-center gap-1">
+                                                    <div class="text-gray-400 text-sm line-through">@item.OriginalPrice.ToString("N0")</div>
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-red-600 font-bold">@item.DiscountedPrice.ToString("N0")</span>
+                                                        <span class="inline-block bg-red-500 text-white text-xs px-2 py-0.5 rounded">-@item.DiscountPercent%</span>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="font-bold">@item.OriginalPrice.ToString("N0")</div>
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <form asp-controller="Cart" asp-action="Update" method="post" class="inline-block">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="itemId" value="@item.ItemId" />
+                                                <input type="number" name="quantity" value="@item.Quantity" 
+                                                       min="1" max="999" 
+                                                       class="w-20 text-center border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                                       onchange="this.closest('form').submit()" />
+                                            </form>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <strong class="text-blue-600">@item.LineTotal.ToString("N0")</strong>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <form asp-controller="Cart" asp-action="Remove" method="post" class="inline-block">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="itemId" value="@item.ItemId" />
+                                                <button type="submit" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Видалити">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
+                    <h5 class="text-xl font-bold mb-4">Підсумок замовлення</h5>
+                    <hr class="mb-4" />
+                    <div class="flex justify-between mb-3">
+                        <span>Товарів:</span>
+                        <strong>@Model.TotalItems шт.</strong>
+                    </div>
+                    <div class="flex justify-between mb-3">
+                        <span>Сума без знижок:</span>
+                        <strong>@Model.TotalOriginalAmount.ToString("N0")</strong>
+                    </div>
+                    @if (Model.TotalDiscount > 0)
+                    {
+                        <div class="flex justify-between mb-3 text-green-600">
+                            <span>Знижка:</span>
+                            <strong>-@Model.TotalDiscount.ToString("N0")</strong>
+                        </div>
+                    }
+                    <hr class="my-4" />
+                    <div class="flex justify-between mb-6">
+                        <h5 class="text-2xl font-bold">До сплати:</h5>
+                        <h5 class="text-2xl font-bold text-blue-600">@Model.TotalAmount.ToString("N0")</h5>
+                    </div>
+
+                    <a asp-area="Client" asp-controller="Checkout" asp-action="Index" class="block w-full bg-green-600 hover:bg-green-700 text-white text-center font-bold py-3 px-4 rounded-lg mb-3 transition text-lg">
+                        <i class="fa-solid fa-check"></i> Оформити замовлення
+                    </a>
+                    
+                    <form asp-controller="Cart" asp-action="Clear" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="w-full border-2 border-red-500 text-red-600 hover:bg-red-50 font-bold py-2 px-4 rounded-lg transition" 
+                                onclick="return confirm('Ви впевнені, що хочете очистити корзину?')">
+                            <i class="fa-solid fa-trash"></i> Очистити корзину
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
