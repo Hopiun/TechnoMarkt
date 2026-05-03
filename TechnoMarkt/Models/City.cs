@@ -10,7 +10,7 @@ namespace TechnoMarkt.Models;
 public partial class City
 {
     [Key]
-    [Column("city_id")]
+    [Column("сity_id")]
     public int CityId { get; set; }
 
     [Column("name")]
