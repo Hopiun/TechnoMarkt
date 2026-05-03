@@ -46,14 +46,14 @@ namespace TechnoMarkt.Areas.Client.Profile
             var client = await _context.Clients.FirstOrDefaultAsync(c => c.ClientId == clientId);
             if (client == null)
             {
-                return (false, "РљР»С–С”РЅС‚Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Клієнта не знайдено.");
             }
 
             client.FirstName = firstName;
             client.LastName = lastName;
             await _context.SaveChangesAsync();
 
-            return (true, "РџСЂРѕС„С–Р»СЊ СѓСЃРїС–СЃРЅРѕ РѕРЅРѕРІР»РµРЅРѕ.");
+            return (true, "Профіль успішно оновлено.");
         }
 
         public async Task<(bool Succeeded, string Message)> ChangeEmailAsync(int clientId, string newEmail, string currentPassword)
@@ -61,24 +61,24 @@ namespace TechnoMarkt.Areas.Client.Profile
             var client = await _context.Clients.FirstOrDefaultAsync(c => c.ClientId == clientId);
             if (client == null)
             {
-                return (false, "РљР»С–С”РЅС‚Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Клієнта не знайдено.");
             }
 
             var user = await _userManager.FindByIdAsync(client.UserId.ToString());
             if (user == null)
             {
-                return (false, "РљРѕСЂРёСЃС‚СѓРІР°С‡Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Користувача не знайдено.");
             }
 
             if (!await _userManager.CheckPasswordAsync(user, currentPassword))
             {
-                return (false, "РќРµРІС–СЂРЅРёР№ РїРѕС‚РѕС‡РЅРёР№ РїР°СЂРѕР»СЊ.");
+                return (false, "Невірний поточний пароль.");
             }
 
             var existingUser = await _userManager.FindByEmailAsync(newEmail);
             if (existingUser != null && existingUser.Id != user.Id)
             {
-                return (false, "Р’РєР°Р·Р°РЅРёР№ Email РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ.");
+                return (false, "Вказаний Email вже використовується.");
             }
 
             var result = await _userManager.SetEmailAsync(user, newEmail);
@@ -90,7 +90,7 @@ namespace TechnoMarkt.Areas.Client.Profile
             user.UserName = newEmail;
             await _userManager.UpdateAsync(user);
 
-            return (true, "Email СѓСЃРїС–С€РЅРѕ Р·РјС–РЅРµРЅРѕ.");
+            return (true, "Email успішно змінено.");
         }
 
         public async Task<(bool Succeeded, string Message)> ChangePasswordAsync(int clientId, string currentPassword, string newPassword)
@@ -98,13 +98,13 @@ namespace TechnoMarkt.Areas.Client.Profile
             var client = await _context.Clients.FirstOrDefaultAsync(c => c.ClientId == clientId);
             if (client == null)
             {
-                return (false, "РљР»С–С”РЅС‚Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Клієнта не знайдено.");
             }
 
             var user = await _userManager.FindByIdAsync(client.UserId.ToString());
             if (user == null)
             {
-                return (false, "РљРѕСЂРёСЃС‚СѓРІР°С‡Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Користувача не знайдено.");
             }
 
             var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
@@ -114,7 +114,7 @@ namespace TechnoMarkt.Areas.Client.Profile
                 return (false, string.Join(", ", errors));
             }
 
-            return (true, "РџР°СЂРѕР»СЊ СѓСЃРїС–С€РЅРѕ Р·РјС–РЅРµРЅРѕ.");
+            return (true, "Пароль успішно змінено.");
         }
 
         public async Task<(bool Succeeded, string Message, bool HasActiveOrders)> DeleteAccountAsync(int clientId)
@@ -125,30 +125,30 @@ namespace TechnoMarkt.Areas.Client.Profile
 
             if (client == null)
             {
-                return (false, "РљР»С–С”РЅС‚Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.", false);
+                return (false, "Клієнта не знайдено.", false);
             }
 
-            var hasActiveOrders = client.Orders.Any(o => 
-                o.Status != OrderStatus.Completed && 
-                o.Status != OrderStatus.Cancelled && 
+            var hasActiveOrders = client.Orders.Any(o =>
+                o.Status != OrderStatus.Completed &&
+                o.Status != OrderStatus.Cancelled &&
                 o.Status != OrderStatus.Returned);
 
             if (hasActiveOrders)
             {
-                return (false, "РќРµРјРѕР¶Р»РёРІРѕ РІРёРґР°Р»РёС‚Рё Р°РєР°СѓРЅС‚, РїРѕРєРё С” Р°РєС‚РёРІРЅС– Р·Р°РјРѕРІР»РµРЅРЅСЏ.", true);
+                return (false, "Неможливо видалити акаунт, поки є активні замовлення.", true);
             }
 
             var user = await _userManager.FindByIdAsync(client.UserId.ToString());
             if (user == null)
             {
-                return (false, "РљРѕСЂРёСЃС‚СѓРІР°С‡Р° РЅРµ Р·РЅР°Р№РґРµРЅРѕ.", false);
+                return (false, "Користувача не знайдено.", false);
             }
 
             client.FirstName = "Deleted";
             client.LastName = "User";
 
             var hasCompletedOrders = client.Orders.Any(o =>
-                o.Status == OrderStatus.Completed || 
+                o.Status == OrderStatus.Completed ||
                 o.Status == OrderStatus.Returned);
 
             if (!hasCompletedOrders)
@@ -161,14 +161,11 @@ namespace TechnoMarkt.Areas.Client.Profile
             var deleteResult = await _userManager.DeleteAsync(user);
             if (!deleteResult.Succeeded)
             {
-                return (false, "РџРѕРјРёР»РєР° РїСЂРё РІРёРґР°Р»РµРЅРЅС– Р°РєР°СѓРЅС‚Р°.", false);
+                return (false, "Помилка при видаленні акаунта.", false);
             }
 
-            return (true, "РђРєР°СѓРЅС‚ СѓСЃРїС–С€РЅРѕ РІРёРґР°Р»РµРЅРѕ.", false);
+            return (true, "Акаунт успішно видалено.", false);
         }
     }
 }
-
-
-
 

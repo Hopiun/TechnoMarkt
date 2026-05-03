@@ -69,17 +69,17 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             bool bothFilled = newDiscount.ItemId.HasValue && newDiscount.CategoryId.HasValue;
 
             if (bothNull || bothFilled)
-                return (false, "Р—РЅРёР¶РєР° РјР°С” Р±СѓС‚Рё РїСЂРёРІ'СЏР·Р°РЅР° Р°Р±Рѕ РґРѕ С‚РѕРІР°СЂСѓ, Р°Р±Рѕ РґРѕ РєР°С‚РµРіРѕСЂС–С— вЂ” Р°Р»Рµ РЅРµ РґРѕ РѕР±РѕС….");
+                return (false, "Знижка має бути прив'язана або до товару, або до категорії — але не до обох.");
 
             if (newDiscount.DateFrom > newDiscount.DateTo)
-                return (false, "Р”Р°С‚Р° РїРѕС‡Р°С‚РєСѓ РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё РїС–Р·РЅС–С€Рµ РґР°С‚Рё Р·Р°РєС–РЅС‡РµРЅРЅСЏ.");
+                return (false, "Дата початку не може бути пізніше дати завершення.");
 
             bool activeExists = await _context.Discounts
                 .Where(discount => discount.ItemId == newDiscount.ItemId && discount.CategoryId == newDiscount.CategoryId)
                 .InPeriod(DateRange.Today).AnyAsync();
 
             if (activeExists)
-                return (false, "РќР° С†РµР№ С‚РѕРІР°СЂ/РєР°С‚РµРіРѕСЂС–СЋ РІР¶Рµ С” Р°РєС‚РёРІРЅР° Р·РЅРёР¶РєР°. РЎРєРѕСЂРёСЃС‚Р°Р№С‚РµСЃСЏ СЂРµРґР°РіСѓРІР°РЅРЅСЏРј.");
+                return (false, "На цей товар/категорію вже є активна знижка. Скористайтеся редагуванням.");
 
             try
             {
@@ -95,25 +95,25 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 _context.Discounts.Add(discount);
                 await _context.SaveChangesAsync();
 
-                return (true, $"Р—РЅРёР¶РєСѓ {discount.Percent}% СѓСЃРїС–С€РЅРѕ РїСЂРёР·РЅР°С‡РµРЅРѕ.");
+                return (true, $"Знижку {discount.Percent}% успішно призначено.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РїСЂРёР·РЅР°С‡РµРЅРЅСЏ Р·РЅРёР¶РєРё.");
+                return (false, "Виникла помилка під час призначення знижки.");
             }
         }
 
         public async Task<(bool Succeeded, string NotificationMessage)> UpdateDiscountAsync(DiscountFormVM updatedDiscount)
         {
             if (!updatedDiscount.Id.HasValue)
-                return (false, "ID Р·РЅРёР¶РєРё РЅРµ РІРєР°Р·Р°РЅРѕ.");
+                return (false, "ID знижки не вказано.");
 
             Discount? discount = await _context.Discounts.FindAsync(updatedDiscount.Id.Value);
             if (discount == null)
-                return (false, $"Р—РЅРёР¶РєСѓ Р· ID:{updatedDiscount.Id} РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, $"Знижку з ID:{updatedDiscount.Id} не знайдено.");
 
             if (updatedDiscount.DateFrom > updatedDiscount.DateTo)
-                return (false, "Р”Р°С‚Р° РїРѕС‡Р°С‚РєСѓ РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё РїС–Р·РЅС–С€Рµ РґР°С‚Рё Р·Р°РєС–РЅС‡РµРЅРЅСЏ.");
+                return (false, "Дата початку не може бути пізніше дати завершення.");
 
             bool otherActiveExists = await _context.Discounts
                 .Where(discount => discount.DiscountId != updatedDiscount.Id)
@@ -121,7 +121,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 .InPeriod(DateRange.Today).AnyAsync();
 
             if (otherActiveExists)
-                return (false, "Р”Р»СЏ С†СЊРѕРіРѕ С‚РѕРІР°СЂСѓ/РєР°С‚РµРіРѕСЂС–С— РІР¶Рµ С–СЃРЅСѓС” С–РЅС€Р° Р°РєС‚РёРІРЅР° Р·РЅРёР¶РєР°.");
+                return (false, "Для цього товару/категорії вже існує інша активна знижка.");
 
             try
             {
@@ -132,11 +132,11 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 _context.Discounts.Update(discount);
                 await _context.SaveChangesAsync();
 
-                return (true, $"Р—РЅРёР¶РєСѓ {discount.Percent}% СѓСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ.");
+                return (true, $"Знижку {discount.Percent}% успішно оновлено.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РѕРЅРѕРІР»РµРЅРЅСЏ Р·РЅРёР¶РєРё.");
+                return (false, "Виникла помилка під час оновлення знижки.");
             }
         }
 
@@ -146,7 +146,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             bool bothFilled = itemId.HasValue && categoryId.HasValue;
 
             if (bothNull || bothFilled)
-                return (false, "РќРµРѕР±С…С–РґРЅРѕ РІРєР°Р·Р°С‚Рё Р°Р±Рѕ С‚РѕРІР°СЂ, Р°Р±Рѕ РєР°С‚РµРіРѕСЂС–СЋ вЂ” Р°Р»Рµ РЅРµ РѕР±РёРґРІР°.");
+                return (false, "Необхідно вказати або товар, або категорію — але не обидва.");
 
             Discount? discount = await _context.Discounts
                 .Where(discount => discount.ItemId == itemId && discount.CategoryId == categoryId)
@@ -154,24 +154,22 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 .FirstOrDefaultAsync();
 
             if (discount == null)
-                return (false, "РђРєС‚РёРІРЅСѓ Р·РЅРёР¶РєСѓ РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, "Активну знижку не знайдено.");
 
             try
             {
                 _context.Discounts.Remove(discount);
                 await _context.SaveChangesAsync();
 
-                return (true, "Р—РЅРёР¶РєСѓ СѓСЃРїС–С€РЅРѕ СЃРєР°СЃРѕРІР°РЅРѕ.");
+                return (true, "Знижку успішно скасовано.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ СЃРєР°СЃСѓРІР°РЅРЅСЏ Р·РЅРёР¶РєРё.");
+                return (false, "Виникла помилка під час скасування знижки.");
             }
         }
     }
 }
-
-
 
 
 

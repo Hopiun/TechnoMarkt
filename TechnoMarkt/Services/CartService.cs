@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using TechnoMarkt.Data;
 using TechnoMarkt.Models;
 using TechnoMarkt.Shared.Cart.ViewModels;

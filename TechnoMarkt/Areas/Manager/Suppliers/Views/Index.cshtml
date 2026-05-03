@@ -1,4 +1,4 @@
-@model SuppliersTableVM
+﻿@model SuppliersTableVM
 
 @{
     Layout = "~/Views/Shared/Partials/Layout/_EmployeeCabinetLayout.cshtml";
@@ -46,7 +46,7 @@
     }
 
     function showToast(message, type) {
-        alert(`${type === 'success' ? '✅ Успіх:' : '❌ Помилка:'} ${message}`);
+        alert(`${type === 'success' ? 'Успіх:' : 'Помилка:'} ${message}`);
     }
     
     async function openSupplierForm(supplierId = null) {

@@ -1,4 +1,4 @@
-namespace TechnoMarkt.Areas.Manager.Suppliers.ViewModels
+﻿namespace TechnoMarkt.Areas.Manager.Suppliers.ViewModels
 {
     public class SupplierItemsRow
     {

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
+п»їusing Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using TechnoMarkt.Shared.Common.ViewModels.Forms;
 using TechnoMarkt.Areas.Manager.Attributes;
@@ -9,45 +9,45 @@ namespace TechnoMarkt.Areas.Manager.Catalog.ViewModels
     {
         public int? Id { get; set; }
 
-        [Display(Name = "Назва товару")]
-        [Required(ErrorMessage = "Назва обов'язкова")]
-        [StringLength(200, ErrorMessage = "Максимум 200 символів")]
+        [Display(Name = "РќР°Р·РІР° С‚РѕРІР°СЂСѓ")]
+        [Required(ErrorMessage = "РќР°Р·РІР° РѕР±РѕРІ'СЏР·РєРѕРІР°")]
+        [StringLength(200, ErrorMessage = "РњР°РєСЃРёРјСѓРј 200 СЃРёРјРІРѕР»С–РІ")]
         public string Name { get; set; } = null!;
 
-        [Display(Name = "Категорія")]
-        [Required(ErrorMessage = "Оберіть категорію")]
+        [Display(Name = "РљР°С‚РµРіРѕСЂС–СЏ")]
+        [Required(ErrorMessage = "РћР±РµСЂС–С‚СЊ РєР°С‚РµРіРѕСЂС–СЋ")]
         public int? CategoryId { get; set; }
         public SelectList? Categories { get; set; }
 
-        [Display(Name = "Бренд")]
-        [Required(ErrorMessage = "Оберіть бренд")]
+        [Display(Name = "Р‘СЂРµРЅРґ")]
+        [Required(ErrorMessage = "РћР±РµСЂС–С‚СЊ Р±СЂРµРЅРґ")]
         public int? BrandId { get; set; }
         public SelectList? Brands { get; set; }
 
-        [Display(Name = "Ціна (?)")]
-        [Required(ErrorMessage = "Ціна обов'язкова")]
-        [Range(0.01, 999999.99, ErrorMessage = "Ціна має бути більше 0")]
+        [Display(Name = "Р¦С–РЅР° (?)")]
+        [Required(ErrorMessage = "Р¦С–РЅР° РѕР±РѕРІ'СЏР·РєРѕРІР°")]
+        [Range(0.01, 999999.99, ErrorMessage = "Р¦С–РЅР° РјР°С” Р±СѓС‚Рё Р±С–Р»СЊС€Рµ 0")]
         public decimal Price { get; set; }
 
-        [Display(Name = "Опис")]
+        [Display(Name = "РћРїРёСЃ")]
         public string? Description { get; set; }
 
-        [Display(Name = "Вага (кг)")]
-        [Range(0.01, 9999.99, ErrorMessage = "Вага має бути більше 0")]
+        [Display(Name = "Р’Р°РіР° (РєРі)")]
+        [Range(0.01, 9999.99, ErrorMessage = "Р’Р°РіР° РјР°С” Р±СѓС‚Рё Р±С–Р»СЊС€Рµ 0")]
         public double? Weight { get; set; }
 
-        [Display(Name = "Габарити")]
-        [StringLength(50, ErrorMessage = "Максимум 50 символів")]
+        [Display(Name = "Р“Р°Р±Р°СЂРёС‚Рё")]
+        [StringLength(50, ErrorMessage = "РњР°РєСЃРёРјСѓРј 50 СЃРёРјРІРѕР»С–РІ")]
         public string? Dimensions { get; set; }
 
-        [Display(Name = "Постачальник")]
-        [Required(ErrorMessage = "Оберіть постачальника")]
+        [Display(Name = "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє")]
+        [Required(ErrorMessage = "РћР±РµСЂС–С‚СЊ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°")]
         public int? SupplierId { get; set; }
         public SelectList? Suppliers { get; set; }
 
-        [Display(Name = "Фото товару")]
+        [Display(Name = "Р¤РѕС‚Рѕ С‚РѕРІР°СЂСѓ")]
         [AllowedExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" })]
-        [MaxFileSize(5 * 1024 * 1024, ErrorMessage = "Максимальний розмір файлу — 5MB")]
+        [MaxFileSize(5 * 1024 * 1024, ErrorMessage = "РњР°РєСЃРёРјР°Р»СЊРЅРёР№ СЂРѕР·РјС–СЂ С„Р°Р№Р»Сѓ вЂ” 5MB")]
         public IFormFile? Image { get; set; }
         public string? CurrentImageUrl { get; set; }
     }

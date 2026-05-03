@@ -1,4 +1,4 @@
-using TechnoMarkt.Areas.Manager.Catalog.ViewModels;
+﻿using TechnoMarkt.Areas.Manager.Catalog.ViewModels;
 
 namespace TechnoMarkt.Areas.Manager.Catalog
 {

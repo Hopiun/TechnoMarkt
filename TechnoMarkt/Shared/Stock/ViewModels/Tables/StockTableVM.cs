@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Common.ViewModels.Tables;
+﻿using TechnoMarkt.Shared.Common.ViewModels.Tables;
 using TechnoMarkt.Models;
 namespace TechnoMarkt.Shared.Stock.ViewModels.Tables
 {

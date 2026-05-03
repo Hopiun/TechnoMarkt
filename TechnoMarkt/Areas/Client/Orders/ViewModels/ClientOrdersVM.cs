@@ -1,4 +1,4 @@
-
+﻿
 namespace TechnoMarkt.Areas.Client.Orders.ViewModels
 {
     public class ClientOrdersViewModel

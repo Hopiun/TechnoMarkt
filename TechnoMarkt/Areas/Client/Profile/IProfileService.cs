@@ -1,4 +1,4 @@
-using TechnoMarkt.Areas.Client.Profile.ViewModels;
+﻿using TechnoMarkt.Areas.Client.Profile.ViewModels;
 
 namespace TechnoMarkt.Areas.Client.Profile
 {

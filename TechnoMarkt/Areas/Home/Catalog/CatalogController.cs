@@ -1,17 +1,13 @@
-using TechnoMarkt.Areas.Home.Catalog.ViewModels;
-using TechnoMarkt.Areas.Manager.Catalog;
-using TechnoMarkt.Shared.Common.ViewModels;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using TechnoMarkt.Areas.Home.Catalog.ViewModels;
 using TechnoMarkt.Data;
 using TechnoMarkt.Interfaces;
-using TechnoMarkt.Shared.Stock.Services;
 using TechnoMarkt.Models;
-using TechnoMarkt.Shared.Common;
 using TechnoMarkt.Shared.Catalog.ViewModels;
-using TechnoMarkt.Shared.Catalog.ViewModels;
+using TechnoMarkt.Shared.Common.ViewModels;
 
 namespace TechnoMarkt.Areas.Home.Catalog
 {
@@ -43,7 +39,7 @@ namespace TechnoMarkt.Areas.Home.Catalog
             var (itemsResult, totalCount) = await _itemsService.GetItemsAsync(categoryId, storeId, filter);
 
             var cities = await _context.Cities
-                .Where(c => _context.Stores.Any(s => s.CityId == c.РЎityId))
+                .Where(c => _context.Stores.Any(s => s.CityId == c.CityId))
                 .ToListAsync();
 
             int? selectedCityId = null;
@@ -54,7 +50,7 @@ namespace TechnoMarkt.Areas.Home.Catalog
                 selectedStoreId = cookieStoreId;
                 selectedCityId = _context.Stores.Find(cookieStoreId)?.CityId;
             }
-            selectedCityId ??= cities.FirstOrDefault()?.РЎityId;
+            selectedCityId ??= cities.FirstOrDefault()?.CityId;
 
             var stores = selectedCityId.HasValue
                 ? await _context.Stores.Where(s => s.CityId == selectedCityId.Value).ToListAsync()
@@ -64,7 +60,7 @@ namespace TechnoMarkt.Areas.Home.Catalog
 
             var model = new HomeCatalogViewModel()
             {
-                Cities = new SelectList(cities.Select(c => new SelectListItem { Value = c.РЎityId.ToString(), Text = c.Name }), "Value", "Text"),
+                Cities = new SelectList(cities.Select(c => new SelectListItem { Value = c.CityId.ToString(), Text = c.Name }), "Value", "Text"),
                 SelectedCityId = selectedCityId,
                 Stores = new SelectList(stores.Select(s => new SelectListItem { Value = s.StoreId.ToString(), Text = s.Address }), "Value", "Text"),
                 SelectedStoreId = selectedStoreId,

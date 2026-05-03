@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+п»їusing System.ComponentModel.DataAnnotations;
 using TechnoMarkt.Shared.Common.ViewModels.Forms;
 
 namespace TechnoMarkt.Areas.Manager.Catalog.ViewModels
@@ -12,17 +12,17 @@ namespace TechnoMarkt.Areas.Manager.Catalog.ViewModels
 
         public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "Знижка (%)")]
-        [Required(ErrorMessage = "Вкажіть відсоток знижки")]
-        [Range(1, 99, ErrorMessage = "Знижка має бути від 1 до 99%")]
+        [Display(Name = "Р—РЅРёР¶РєР° (%)")]
+        [Required(ErrorMessage = "Р’РєР°Р¶С–С‚СЊ РІС–РґСЃРѕС‚РѕРє Р·РЅРёР¶РєРё")]
+        [Range(1, 99, ErrorMessage = "Р—РЅРёР¶РєР° РјР°С” Р±СѓС‚Рё РІС–Рґ 1 РґРѕ 99%")]
         public decimal Percent { get; set; } = 1;
 
-        [Display(Name = "Дата початку")]
-        [Required(ErrorMessage = "Вкажіть дату початку")]
+        [Display(Name = "Р”Р°С‚Р° РїРѕС‡Р°С‚РєСѓ")]
+        [Required(ErrorMessage = "Р’РєР°Р¶С–С‚СЊ РґР°С‚Сѓ РїРѕС‡Р°С‚РєСѓ")]
         public DateOnly DateFrom { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-        [Display(Name = "Дата закінчення")]
-        [Required(ErrorMessage = "Вкажіть дату закінчення")]
+        [Display(Name = "Р”Р°С‚Р° Р·Р°РєС–РЅС‡РµРЅРЅСЏ")]
+        [Required(ErrorMessage = "Р’РєР°Р¶С–С‚СЊ РґР°С‚Сѓ Р·Р°РєС–РЅС‡РµРЅРЅСЏ")]
         public DateOnly DateTo { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
     }
 }

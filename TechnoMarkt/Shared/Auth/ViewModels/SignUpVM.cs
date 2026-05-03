@@ -1,27 +1,27 @@
-using TechnoMarkt.Models;
+п»їusing TechnoMarkt.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace TechnoMarkt.Shared.Auth.ViewModels
 {
     public class SignUpVM
     {
-        [Required(ErrorMessage = "Будь ласка, ведіть ім'я")]
+        [Required(ErrorMessage = "Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРµРґС–С‚СЊ С–Рј'СЏ")]
         [StringLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Будь ласка, ведіть прізвище")]
+        [Required(ErrorMessage = "Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРµРґС–С‚СЊ РїСЂС–Р·РІРёС‰Рµ")]
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Будь ласка, ведіть email")]
+        [Required(ErrorMessage = "Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРµРґС–С‚СЊ email")]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Будь ласка, ведіть пароль")]
+        [Required(ErrorMessage = "Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРµРґС–С‚СЊ РїР°СЂРѕР»СЊ")]
         [MinLength(8)]
         public string Password { get; set; } = string.Empty;
 
-        [Compare("Password", ErrorMessage = "Паролі не співпадають")]
+        [Compare("Password", ErrorMessage = "РџР°СЂРѕР»С– РЅРµ СЃРїС–РІРїР°РґР°СЋС‚СЊ")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

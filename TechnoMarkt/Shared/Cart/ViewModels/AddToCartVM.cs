@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace TechnoMarkt.Shared.Cart.ViewModels

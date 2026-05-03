@@ -67,7 +67,7 @@ namespace TechnoMarkt.Areas.Manager.Warehouse
         {
             if (addedQuantity <= 0)
             {
-                return BadRequest(new { success = false, message = "РљС–Р»СЊРєС–СЃС‚СЊ РїРѕРІРёРЅРЅР° Р±СѓС‚Рё Р±С–Р»СЊС€РѕСЋ Р·Р° РЅСѓР»СЊ." });
+                return BadRequest(new { success = false, message = "Кількість повинна бути більшою за нуль." });
             }
 
             var wh = await _context.Warehouses
@@ -78,7 +78,7 @@ namespace TechnoMarkt.Areas.Manager.Warehouse
 
             (bool succeeded, string message) = await _stockService.RestockItemAsync(warehouseId, StoreId, addedQuantity);
             if (succeeded)
-                await _eventLogsService.LogAsync("Update", "Warehouse", warehouseId, $"РџРѕРїРѕРІРЅРµРЅРЅСЏ СЃРєР»Р°РґСѓ: '{itemName}', +{addedQuantity} С€С‚. (РњР°РіР°Р·РёРЅ ID:{StoreId})");
+                await _eventLogsService.LogAsync("Update", "Warehouse", warehouseId, $"Поповнення складу: '{itemName}', +{addedQuantity} шт. (Магазин ID:{StoreId})");
             return Ok(new { success = succeeded, message });
         }
 
@@ -88,7 +88,7 @@ namespace TechnoMarkt.Areas.Manager.Warehouse
         {
             if (exactQuantity < 0)
             {
-                return BadRequest(new { success = false, message = "РљС–Р»СЊРєС–СЃС‚СЊ РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё РІС–Рґ'С”РјРЅРѕСЋ." });
+                return BadRequest(new { success = false, message = "Кількість не може бути від'ємною." });
             }
 
             var wh = await _context.Warehouses
@@ -98,7 +98,7 @@ namespace TechnoMarkt.Areas.Manager.Warehouse
 
             (bool succeeded, string? message) = await _stockService.AdjustInventoryAsync(warehouseId, StoreId, exactQuantity);
             if (succeeded)
-                await _eventLogsService.LogAsync("Update", "Warehouse", warehouseId, $"РљРѕСЂРёРіСѓРІР°РЅРЅСЏ Р·Р°Р»РёС€РєС–РІ: '{itemName}', РІСЃС‚Р°РЅРѕРІР»РµРЅРѕ {exactQuantity} С€С‚. (РњР°РіР°Р·РёРЅ ID:{StoreId})");
+                await _eventLogsService.LogAsync("Update", "Warehouse", warehouseId, $"Коригування залишків: '{itemName}', встановлено {exactQuantity} шт. (Магазин ID:{StoreId})");
             return Ok(new { success = succeeded, message });
         }
     }

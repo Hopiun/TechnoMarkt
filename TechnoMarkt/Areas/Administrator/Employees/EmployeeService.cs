@@ -144,7 +144,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                 AdminId = store.AdminId,
                 Address = store.Address,
                 Phone = store.Phone,
-                Cities = new SelectList(cities, nameof(City.РЎityId), nameof(City.Name)),
+                Cities = new SelectList(cities, nameof(City.CityId), nameof(City.Name)),
                 Administrators = new SelectList(admins, nameof(Employee.EmployeeId), nameof(Employee.FirstName))
             };
         }
@@ -152,15 +152,15 @@ namespace TechnoMarkt.Areas.Administrator.Employees
         public async Task<(bool Succeeded, string NotificationText)> AddEmployeeAsync(int storeId, EmployeeFormVM newEmployee)
         {
             if (string.IsNullOrWhiteSpace(newEmployee.Email))
-                return (false, "Email С” РѕР±РѕРІ'СЏР·РєРѕРІРёРј");
+                return (false, "Email є обов'язковим");
 
             if (string.IsNullOrWhiteSpace(newEmployee.Password))
-                return (false, "РџР°СЂРѕР»СЊ С” РѕР±РѕРІ'СЏР·РєРѕРІРёРј");
+                return (false, "Пароль є обов'язковим");
 
             AppUser? existingUser = await _userManager.FindByEmailAsync(newEmployee.Email!);
 
             if (existingUser != null)
-                return (false, $"Email {existingUser.Email} РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ");
+                return (false, $"Email {existingUser.Email} вже використовується");
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -203,7 +203,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
 
                 await transaction.CommitAsync();
 
-                return (true, $"РџСЂР°С†С–РІРЅРёРєР° {newEmployee.FirstName} {newEmployee.LastName} (ID: {employee.EmployeeId}) СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ");
+                return (true, $"Працівника {newEmployee.FirstName} {newEmployee.LastName} (ID: {employee.EmployeeId}) успішно додано");
             }
             catch (Exception ex)
             {
@@ -211,14 +211,14 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                 var innerMsg = ex.InnerException?.InnerException?.Message
                             ?? ex.InnerException?.Message
                             ?? ex.Message;
-                return (false, $"РџРѕРјРёР»РєР° РїСЂРё СЃС‚РІРѕСЂРµРЅРЅС– РїСЂР°С†С–РІРЅРёРєР°: {innerMsg}");
+                return (false, $"Помилка при створенні працівника: {innerMsg}");
             }
         }
 
         public async Task<(bool Succeeded, string NotificationText)> UpdateEmployeeAsync(int employeeId, EmployeeFormVM updatedEmployee)
         {
             Employee? employee = await _context.Employees.FindAsync(employeeId);
-            if (employee == null) return (false, $"РЎРїС–РІСЂРѕР±С–С‚РЅРёРєР° РјР°РіР°Р·РёРЅСѓ Р· ID:{employeeId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ");
+            if (employee == null) return (false, $"Співробітника магазину з ID:{employeeId} не знайдено");
 
             if (updatedEmployee.Role == EmployeeRole.Administrator && employee.Role != EmployeeRole.Administrator)
             {
@@ -226,7 +226,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                     .AnyAsync(e => e.StoreId == employee.StoreId && e.Role == EmployeeRole.Administrator);
 
                 if (storeHasAdmin)
-                    return (false, "РќРµРјРѕР¶Р»РёРІРѕ Р·РјС–РЅРёС‚Рё СЂРѕР»СЊ РїСЂР°С†С–РІРЅРёРєР° РЅР° \'РђРґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂ\', Р±Рѕ РІ РјР°РіР°Р·РёРЅС– РІР¶Рµ С” Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂ!");
+                    return (false, "Неможливо змінити роль працівника на 'Адміністратор', бо в магазині вже є адміністратор!");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -254,13 +254,13 @@ namespace TechnoMarkt.Areas.Administrator.Employees
 
             await transaction.CommitAsync();
 
-            return (true, $"РЈСЃРїС–С€РЅРѕ Р·РјС–РЅРµРЅРѕ РґР°РЅС– РїСЂР°С†С–РІРЅРёРєР° Р· ID:{employee.EmployeeId}");
+            return (true, $"Успішно змінено дані працівника з ID:{employee.EmployeeId}");
         }
 
         public async Task<(bool Succeeded, string NotificationText)> UpdateStoreAsync(int storeId, StoreFormVM updatedStore)
         {
             Store? store = await _context.Stores.FindAsync(storeId);
-            if (store == null) return (false, $"РњР°РіР°Р·РёРЅ Р· ID:{storeId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ");
+            if (store == null) return (false, $"Магазин з ID:{storeId} не знайдено");
 
             store.CityId = updatedStore.CityId;
             store.Address = updatedStore.Address;
@@ -270,24 +270,24 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             try
             {
                 await _context.SaveChangesAsync();
-                return (true, $"РЈСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ РґР°РЅС– РјР°РіР°Р·РёРЅСѓ (ID:{store.StoreId})");
+                return (true, $"Успішно оновлено дані магазину (ID:{store.StoreId})");
             }
             catch (Exception ex)
             {
-                return (false, $"РџРѕРјРёР»РєР° РѕРЅРѕРІР»РµРЅРЅСЏ РјР°РіР°Р·РёРЅСѓ: {ex.Message}");
+                return (false, $"Помилка оновлення магазину: {ex.Message}");
             }
         }
 
         public async Task<(bool Succeeded, string NotificationText)> DeactivateEmployeeAsync(int employeeId, int currentUserId)
         {
             Employee? employee = await _context.Employees.FindAsync(employeeId);
-            if (employee == null) return (false, $"РЎРїС–РІСЂРѕР±С–С‚РЅРёРєР° РјР°РіР°Р·РёРЅСѓ Р· ID:{employeeId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ");
+            if (employee == null) return (false, $"Співробітника магазину з ID:{employeeId} не знайдено");
 
             if (employee.Status == EmployeeStatus.Former)
-                return (false, $"{employee.FirstName} {employee.LastName} РІР¶Рµ С” РґРµР°РєС‚РёРІРѕРІР°РЅРёРј РїСЂР°С†С–РІРЅРёРєРѕРј");
+                return (false, $"{employee.FirstName} {employee.LastName} вже є деактивованим працівником");
 
             if (employee.UserId == currentUserId)
-                return (false, "РќРµ РјРѕР¶РЅР° РґРµР°РєС‚РёРІСѓРІР°С‚Рё РІР»Р°СЃРЅРёР№ РѕР±Р»С–РєРѕРІРёР№ Р·Р°РїРёСЃ");
+                return (false, "Не можна деактивувати власний обліковий запис");
 
             if (employee.Role == EmployeeRole.Administrator)
             {
@@ -296,7 +296,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                     .CountAsync(e => e.EmployeeId != employeeId);
 
                 if (activeAdminCount == 0)
-                    return (false, "РќРµ РјРѕР¶РЅР° РґРµР°РєС‚РёРІСѓРІР°С‚Рё С”РґРёРЅРѕРіРѕ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР° РјР°РіР°Р·РёРЅСѓ. РЎРїРѕС‡Р°С‚РєСѓ РїСЂРёР·РЅР°С‡С‚Рµ С–РЅС€РѕРіРѕ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°.");
+                    return (false, "Не можна деактивувати єдиного адміністратора магазину. Спочатку призначте іншого адміністратора.");
             }
 
             if (employee.Role == EmployeeRole.Operator || employee.Role == EmployeeRole.Manager)
@@ -305,8 +305,8 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                     .CountAsync(e => e.EmployeeId != employeeId);
 
                 if (activeCount == 0)
-                    return (false, $"РќРµ РјРѕР¶РЅР° РґРµР°РєС‚РёРІСѓРІР°С‚Рё РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ Р°РєС‚РёРІРЅРѕРіРѕ " +
-                                  $"{(employee.Role == EmployeeRole.Operator ? "РєР°СЃРёСЂР°" : "РјРµРЅРµРґР¶РµСЂР°")}");
+                    return (false, $"Не можна деактивувати останнього активного " +
+                                  $"{(employee.Role == EmployeeRole.Operator ? "касира" : "менеджера")}");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -340,16 +340,16 @@ namespace TechnoMarkt.Areas.Administrator.Employees
 
             await transaction.CommitAsync();
 
-            return (true, $"Р—Р°РїРёСЃ РїСЂР°С†С–РІРЅРёРєР° {employee.FirstName} {employee.LastName} (ID: {employee.EmployeeId}) РґРµР°РєС‚РёРІРѕРІР°РЅРѕ");
+            return (true, $"Запис працівника {employee.FirstName} {employee.LastName} (ID: {employee.EmployeeId}) деактивовано");
         }
 
         public async Task<(bool Succeeded, string NotificationText)> ReactivateEmployeeAsync(int employeeId)
         {
             Employee? employee = await _context.Employees.FindAsync(employeeId);
-            if (employee == null) return (false, $"РЎРїС–РІСЂРѕР±С–С‚РЅРёРєР° Р· ID:{employeeId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ");
+            if (employee == null) return (false, $"Співробітника з ID:{employeeId} не знайдено");
 
             if (employee.Status != EmployeeStatus.Former)
-                return (false, $"{employee.FirstName} {employee.LastName} РІР¶Рµ С” Р°РєС‚РёРІРЅРёРј РїСЂР°С†С–РІРЅРёРєРѕРј");
+                return (false, $"{employee.FirstName} {employee.LastName} вже є активним працівником");
 
             employee.Status = EmployeeStatus.Present;
             await _context.SaveChangesAsync();
@@ -369,7 +369,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
                 });
             }
 
-            return (true, $"РџСЂР°С†С–РІРЅРёРєР° {employee.FirstName} {employee.LastName} (ID: {employee.EmployeeId}) СЂРµР°РєС‚РёРІРѕРІР°РЅРѕ");
+            return (true, $"Працівника {employee.FirstName} {employee.LastName} (ID: {employee.EmployeeId}) реактивовано");
         }
     }
 }

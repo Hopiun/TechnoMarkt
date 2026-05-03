@@ -87,7 +87,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 Category? parent = await _context.Categories.FindAsync(newCategory.ParentCategoryId.Value);
                 if (parent != null && parent.ParentCategoryId != null)
                 {
-                    return (false, "РќРµРјРѕР¶Р»РёРІРѕ СЃС‚РІРѕСЂРёС‚Рё РєР°С‚РµРіРѕСЂС–СЋ 3-РіРѕ СЂС–РІРЅСЏ.");
+                    return (false, "Неможливо створити категорію 3-го рівня.");
                 }
             }
 
@@ -95,7 +95,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 .AnyAsync(category => category.Name.ToLower() == newCategory.Name.ToLower() && category.ParentCategoryId == newCategory.ParentCategoryId);
 
             if (nameExists)
-                return (false, "РљР°С‚РµРіРѕСЂС–СЏ Р· С‚Р°РєРѕСЋ РЅР°Р·РІРѕСЋ РІР¶Рµ С–СЃРЅСѓС” РЅР° С†СЊРѕРјСѓ СЂС–РІРЅС–.");
+                return (false, "Категорія з такою назвою вже існує на цьому рівні.");
 
             try
             {
@@ -108,11 +108,11 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 _context.Categories.Add(category);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РљР°С‚РµРіРѕСЂС–СЋ '{category.Name}' СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ.");
+                return (true, $"Категорію '{category.Name}' успішно додано.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РґРѕРґР°РІР°РЅРЅСЏ РєР°С‚РµРіРѕСЂС–С—.");
+                return (false, "Виникла помилка під час додавання категорії.");
             }
         }
 
@@ -120,14 +120,14 @@ namespace TechnoMarkt.Areas.Manager.Catalog
         {
             Category? category = await _context.Categories.FindAsync(updatedCategory.Id);
             if (category == null)
-                return (false, $"РљР°С‚РµРіРѕСЂС–СЋ Р· ID:{updatedCategory.Id} РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, $"Категорію з ID:{updatedCategory.Id} не знайдено.");
 
             if (updatedCategory.ParentCategoryId.HasValue && updatedCategory.ParentCategoryId != category.ParentCategoryId)
             {
                 Category? newParent = await _context.Categories.FindAsync(updatedCategory.ParentCategoryId.Value);
                 if (newParent != null && newParent.ParentCategoryId != null)
                 {
-                    return (false, "РќРµРјРѕР¶Р»РёРІРѕ РїРµСЂРµРјС–СЃС‚РёС‚Рё: СѓС‚РІРѕСЂРёС‚СЊСЃСЏ 3-Р№ СЂС–РІРµРЅСЊ РІРєР»Р°РґРµРЅРѕСЃС‚С–.");
+                    return (false, "Неможливо перемістити: утвориться 3-й рівень вкладеності.");
                 }
             }
 
@@ -137,7 +137,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                                category.ParentCategoryId == updatedCategory.ParentCategoryId);
 
             if (nameExists)
-                return (false, "РљР°С‚РµРіРѕСЂС–СЏ Р· С‚Р°РєРѕСЋ РЅР°Р·РІРѕСЋ РІР¶Рµ С–СЃРЅСѓС” РЅР° С†СЊРѕРјСѓ СЂС–РІРЅС–.");
+                return (false, "Категорія з такою назвою вже існує на цьому рівні.");
 
             try
             {
@@ -147,11 +147,11 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 _context.Categories.Update(category);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РљР°С‚РµРіРѕСЂС–СЋ '{category.Name}' СѓСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ.");
+                return (true, $"Категорію '{category.Name}' успішно оновлено.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РѕРЅРѕРІР»РµРЅРЅСЏ РєР°С‚РµРіРѕСЂС–С—.");
+                return (false, "Виникла помилка під час оновлення категорії.");
             }
         }
 
@@ -163,30 +163,28 @@ namespace TechnoMarkt.Areas.Manager.Catalog
                 .FirstOrDefaultAsync(category => category.CategoryId == categoryId);
 
             if (category == null)
-                return (false, $"РљР°С‚РµРіРѕСЂС–СЋ Р· ID:{categoryId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, $"Категорію з ID:{categoryId} не знайдено.");
 
             if (category.InverseParentCategory.Any())
-                return (false, $"РќРµРјРѕР¶Р»РёРІРѕ РІРёРґР°Р»РёС‚Рё РєР°С‚РµРіРѕСЂС–СЋ '{category.Name}', РѕСЃРєС–Р»СЊРєРё РІРѕРЅР° РјР°С” РїС–РґРєР°С‚РµРіРѕСЂС–С—.");
+                return (false, $"Неможливо видалити категорію '{category.Name}', оскільки вона має підкатегорії.");
 
             if (category.Items.Any())
-                return (false, $"РќРµРјРѕР¶Р»РёРІРѕ РІРёРґР°Р»РёС‚Рё РєР°С‚РµРіРѕСЂС–СЋ '{category.Name}', РѕСЃРєС–Р»СЊРєРё РґРѕ РЅРµС— РїСЂРёРІ'СЏР·Р°РЅС– С‚РѕРІР°СЂРё.");
+                return (false, $"Неможливо видалити категорію '{category.Name}', оскільки до неї прив'язані товари.");
 
             try
             {
                 _context.Categories.Remove(category);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РљР°С‚РµРіРѕСЂС–СЋ '{category.Name}' СѓСЃРїС–С€РЅРѕ РІРёРґР°Р»РµРЅРѕ.");
+                return (true, $"Категорію '{category.Name}' успішно видалено.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РІРёРґР°Р»РµРЅРЅСЏ РєР°С‚РµРіРѕСЂС–С—.");
+                return (false, "Виникла помилка під час видалення категорії.");
             }
         }
     }
 }
-
-
 
 
 

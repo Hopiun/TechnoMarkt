@@ -36,8 +36,8 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             {
                 SupplierId = supplier.SupplierId,
                 SupplierName = supplier.Name,
-                Contact = supplier.Contact ?? "РќРµ РІРєР°Р·Р°РЅРѕ",
-                Country = supplier.Country != null ? supplier.Country.Name : "РќРµРІС–РґРѕРјР° РєСЂР°С—РЅР°",
+                Contact = supplier.Contact ?? "Не вказано",
+                Country = supplier.Country != null ? supplier.Country.Name : "Невідома країна",
                 Rating = supplier.Rating
             })
             .ToListAsync();
@@ -49,12 +49,12 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                 .Where(item => item.SupplierId == supplierId)
                 .Select(item => new
                 {
-                    CategoryName = item.Category != null ? item.Category.Name : "Р†РЅС€Рµ",
+                    CategoryName = item.Category != null ? item.Category.Name : "Інше",
                     Row = new SupplierItemsRow()
                     {
                         ItemId = item.ItemId,
                         ItemName = item.Name,
-                        Brand = item.Brand != null ? item.Brand.Name : "РќРµ РІРєР°Р·Р°РЅРѕ",
+                        Brand = item.Brand != null ? item.Brand.Name : "Не вказано",
                         Weight = item.Weight ?? 0,
                         Price = item.Price
                     }
@@ -108,7 +108,7 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                                       (newSupplier.Contact != null && supplier.Contact == newSupplier.Contact));
 
             if (similarSupplierExists)
-                return (false, "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє Р· С‚Р°РєРёРј С–РјРµРЅРµРј Р°Р±Рѕ РєРѕРЅС‚Р°РєС‚РЅРёРјРё РґР°РЅРёРјРё РІР¶Рµ С–СЃРЅСѓС”.");
+                return (false, "Постачальник з таким іменем або контактними даними вже існує.");
 
             try
             {
@@ -123,11 +123,11 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                 _context.Suppliers.Add(supplier);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° {supplier.Name} (ID: {supplier.SupplierId}) СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ.");
+                return (true, $"Постачальника {supplier.Name} (ID: {supplier.SupplierId}) успішно додано.");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РґРѕРґР°РІР°РЅРЅСЏ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°.");
+                return (false, "Виникла помилка під час додавання постачальника.");
             }
         }
 
@@ -136,7 +136,7 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             Supplier? supplier = await _context.Suppliers.FindAsync(supplierId);
 
             if (supplier == null)
-                return (false, $"РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° Р· ID:{supplierId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, $"Постачальника з ID:{supplierId} не знайдено.");
 
             bool similarSupplierExists = await _context.Suppliers
                 .AnyAsync(supplier => supplier.SupplierId != updatedSupplier.Id &&
@@ -144,7 +144,7 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                 (updatedSupplier.Contact != null && supplier.Contact == updatedSupplier.Contact)));
 
             if (similarSupplierExists)
-                return (false, "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє Р· С‚Р°РєРёРј С–РјРµРЅРµРј Р°Р±Рѕ РєРѕРЅС‚Р°РєС‚РЅРёРјРё РґР°РЅРёРјРё РІР¶Рµ С–СЃРЅСѓС”.");
+                return (false, "Постачальник з таким іменем або контактними даними вже існує.");
 
             try
             {
@@ -156,11 +156,11 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                 _context.Suppliers.Update(supplier);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РЈСЃРїС–С€РЅРѕ Р·РјС–РЅРµРЅРѕ РґР°РЅС– РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° Р· ID:{supplier.SupplierId}");
+                return (true, $"Успішно змінено дані постачальника з ID:{supplier.SupplierId}");
             }
             catch (Exception)
             {
-                return (false, "Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РѕРЅРѕРІР»РµРЅРЅСЏ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°.");
+                return (false, "Виникла помилка під час оновлення постачальника.");
             }
         }
 
@@ -169,12 +169,12 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             Supplier? supplier = await _context.Suppliers.FindAsync(supplierId);
 
             if (supplier == null)
-                return (false, $"РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° Р· ID:{supplierId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ.");
+                return (false, $"Постачальника з ID:{supplierId} не знайдено.");
 
             bool hasItems = await _context.Items.AnyAsync(item => item.SupplierId == supplierId);
             if (hasItems)
             {
-                return (false, $"РќРµРјРѕР¶Р»РёРІРѕ РІРёРґР°Р»РёС‚Рё {supplier.Name}, РѕСЃРєС–Р»СЊРєРё Р·Р° РЅРёРј Р·Р°РєСЂС–РїР»РµРЅС– С‚РѕРІР°СЂРё РІ РєР°С‚Р°Р»РѕР·С–.");
+                return (false, $"Неможливо видалити {supplier.Name}, оскільки за ним закріплені товари в каталозі.");
             }
 
             try
@@ -182,17 +182,15 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
                 _context.Suppliers.Remove(supplier);
                 await _context.SaveChangesAsync();
 
-                return (true, $"РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° Р· ID:{supplierId} СѓСЃРїС–С€РЅРѕ РІРёРґР°Р»РµРЅРѕ.");
+                return (true, $"Постачальника з ID:{supplierId} успішно видалено.");
             }
             catch (Exception)
             {
-                return (false, $"Р’РёРЅРёРєР»Р° РЅРµРїРµСЂРµРґР±Р°С‡СѓРІР°РЅР° РїРѕРјРёР»РєР° РїС–Рґ С‡Р°СЃ РІРёРґР°Р»РµРЅРЅСЏ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°.");
+                return (false, $"Виникла непередбачувана помилка під час видалення постачальника.");
             }
         }
     }
 }
-
-
 
 
 

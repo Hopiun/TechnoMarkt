@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Stock.Services;
+﻿using TechnoMarkt.Shared.Stock.Services;
 
 namespace TechnoMarkt.Areas.Manager.Warehouse
 {

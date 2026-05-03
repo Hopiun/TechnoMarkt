@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,8 +10,8 @@ namespace TechnoMarkt.Models;
 public partial class City
 {
     [Key]
-    [Column("сity_id")]
-    public int СityId { get; set; }
+    [Column("city_id")]
+    public int CityId { get; set; }
 
     [Column("name")]
     [StringLength(100)]

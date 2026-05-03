@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using TechnoMarkt.Shared.Orders.ViewModels.Tables;
 using TechnoMarkt.Shared.Stock.ViewModels.Tables;
 using TechnoMarkt.Shared.EventLogs.ViewModels.Tables;

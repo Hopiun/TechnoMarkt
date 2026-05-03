@@ -63,7 +63,7 @@ namespace TechnoMarkt.Areas.Client.Wallet
             var result = await _walletService.AddPaymentMethodAsync(ClientId, form.BankName, form.CardNumber, form.CardType);
             if (result.Succeeded)
             {
-                await _eventLogsService.LogAsync("Create", "PaymentMethod", ClientId, $"Р”РѕРґР°РЅРѕ РјРµС‚РѕРґ РѕРїР»Р°С‚Рё: {form.BankName} ({form.CardType})");
+                await _eventLogsService.LogAsync("Create", "PaymentMethod", ClientId, $"Додано метод оплати: {form.BankName} ({form.CardType})");
                 TempData["Success"] = result.Message;
             }
             else
@@ -81,7 +81,7 @@ namespace TechnoMarkt.Areas.Client.Wallet
             var result = await _walletService.DeletePaymentMethodAsync(ClientId, paymentMethodId);
             if (result.Succeeded)
             {
-                await _eventLogsService.LogAsync("Delete", "PaymentMethod", paymentMethodId, "Р’РёРґР°Р»РµРЅРѕ РјРµС‚РѕРґ РѕРїР»Р°С‚Рё");
+                await _eventLogsService.LogAsync("Delete", "PaymentMethod", paymentMethodId, "Видалено метод оплати");
                 TempData["Success"] = result.Message;
             }
             else
@@ -99,7 +99,7 @@ namespace TechnoMarkt.Areas.Client.Wallet
             var result = await _walletService.TopUpWalletAsync(cid, amount);
             if (result.Succeeded)
             {
-                await _eventLogsService.LogAsync("Update", "Client", cid, $"РџРѕРїРѕРІРЅРµРЅРѕ Р±РѕРЅСѓСЃРЅРёР№ СЂР°С…СѓРЅРѕРє РЅР° {amount:N0}");
+                await _eventLogsService.LogAsync("Update", "Client", cid, $"Поповнено бонусний рахунок на {amount:N0}");
 
                 var user = await _userManager.GetUserAsync(User);
                 if (user != null)

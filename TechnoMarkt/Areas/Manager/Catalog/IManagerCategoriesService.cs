@@ -1,4 +1,4 @@
-using TechnoMarkt.Areas.Manager.Catalog.ViewModels;
+﻿using TechnoMarkt.Areas.Manager.Catalog.ViewModels;
 using TechnoMarkt.Shared.Common.ViewModels.Filters;
 using TechnoMarkt.Shared.EventLogs.ViewModels.Filters;
 

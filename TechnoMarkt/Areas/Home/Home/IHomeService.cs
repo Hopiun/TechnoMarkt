@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Catalog.ViewModels;
+﻿using TechnoMarkt.Shared.Catalog.ViewModels;
 using TechnoMarkt.Shared.Catalog.ViewModels;
 
 namespace TechnoMarkt.Areas.Home.Home

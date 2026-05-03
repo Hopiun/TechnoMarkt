@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Stock.Services;
+﻿using TechnoMarkt.Shared.Stock.Services;
 using TechnoMarkt.Shared.Stock.ViewModels.Kpi;
 using TechnoMarkt.Shared.Stock.ViewModels.Tables;
 

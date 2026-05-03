@@ -1,4 +1,4 @@
-namespace TechnoMarkt.Interfaces
+﻿namespace TechnoMarkt.Interfaces
 {
     public interface IEventLogsService
     {

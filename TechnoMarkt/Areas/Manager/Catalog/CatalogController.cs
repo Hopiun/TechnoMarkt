@@ -138,7 +138,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _itemsService.AddItemAsync(form, StoreId);
@@ -146,7 +146,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             {
                 var category = await _context.Categories.FindAsync(form.CategoryId);
                 var brand = await _context.Brands.FindAsync(form.BrandId);
-                var desc = $"Р”РѕРґР°РЅРѕ С‚РѕРІР°СЂ: '{form.Name}', РљР°С‚РµРіРѕСЂС–СЏ: {category?.Name ?? "вЂ”"}, Р‘СЂРµРЅРґ: {brand?.Name ?? "вЂ”"}, Р¦С–РЅР°: {form.Price:N0}";
+                var desc = $"Додано товар: '{form.Name}', Категорія: {category?.Name ?? "—"}, Бренд: {brand?.Name ?? "—"}, Ціна: {form.Price:N0}";
                 await _eventLogsService.LogAsync("Create", "Item", null, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -159,7 +159,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _itemsService.UpdateItemAsync(form);
@@ -167,7 +167,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             {
                 var category = await _context.Categories.FindAsync(form.CategoryId);
                 var brand = await _context.Brands.FindAsync(form.BrandId);
-                var desc = $"РћРЅРѕРІР»РµРЅРѕ С‚РѕРІР°СЂ (ID:{form.Id}): '{form.Name}', РљР°С‚РµРіРѕСЂС–СЏ: {category?.Name ?? "вЂ”"}, Р‘СЂРµРЅРґ: {brand?.Name ?? "вЂ”"}, Р¦С–РЅР°: {form.Price:N0}";
+                var desc = $"Оновлено товар (ID:{form.Id}): '{form.Name}', Категорія: {category?.Name ?? "—"}, Бренд: {brand?.Name ?? "—"}, Ціна: {form.Price:N0}";
                 await _eventLogsService.LogAsync("Update", "Item", form.Id, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -179,7 +179,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             var item = await _context.Items.FindAsync(itemId);
             var (succeeded, message) = await _itemsService.DeleteItemAsync(itemId);
             if (succeeded)
-                await _eventLogsService.LogAsync("Delete", "Item", itemId, $"Р’РёРґР°Р»РµРЅРѕ С‚РѕРІР°СЂ: '{item?.Name ?? "ID:" + itemId}'");
+                await _eventLogsService.LogAsync("Delete", "Item", itemId, $"Видалено товар: '{item?.Name ?? "ID:" + itemId}'");
             return Ok(new { success = succeeded, message });
         }
 
@@ -203,14 +203,14 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _categoriesService.AddCategoryAsync(form);
             if (succeeded)
             {
                 var parent = form.ParentCategoryId.HasValue ? await _context.Categories.FindAsync(form.ParentCategoryId) : null;
-                var desc = $"Р”РѕРґР°РЅРѕ РєР°С‚РµРіРѕСЂС–СЋ: '{form.Name}'" + (parent != null ? $" (Р±Р°С‚СЊРєС–РІСЃСЊРєР°: {parent.Name})" : "");
+                var desc = $"Додано категорію: '{form.Name}'" + (parent != null ? $" (батьківська: {parent.Name})" : "");
                 await _eventLogsService.LogAsync("Create", "Category", null, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -223,14 +223,14 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _categoriesService.UpdateCategoryAsync(form);
             if (succeeded)
             {
                 var parent = form.ParentCategoryId.HasValue ? await _context.Categories.FindAsync(form.ParentCategoryId) : null;
-                var desc = $"РћРЅРѕРІР»РµРЅРѕ РєР°С‚РµРіРѕСЂС–СЋ (ID:{form.Id}): '{form.Name}'" + (parent != null ? $", Р±Р°С‚СЊРєС–РІСЃСЊРєР°: {parent.Name}" : "");
+                var desc = $"Оновлено категорію (ID:{form.Id}): '{form.Name}'" + (parent != null ? $", батьківська: {parent.Name}" : "");
                 await _eventLogsService.LogAsync("Update", "Category", form.Id, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -242,7 +242,7 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             var category = await _context.Categories.FindAsync(categoryId);
             var (succeeded, message) = await _categoriesService.DeleteCategoryAsync(categoryId);
             if (succeeded)
-                await _eventLogsService.LogAsync("Delete", "Category", categoryId, $"Р’РёРґР°Р»РµРЅРѕ РєР°С‚РµРіРѕСЂС–СЋ: '{category?.Name ?? "ID:" + categoryId}'");
+                await _eventLogsService.LogAsync("Delete", "Category", categoryId, $"Видалено категорію: '{category?.Name ?? "ID:" + categoryId}'");
             return Ok(new { success = succeeded, message });
         }
 
@@ -266,16 +266,16 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _discountsService.AssignDiscountAsync(form);
             if (succeeded)
             {
                 string target = form.ItemId.HasValue
-                    ? await _context.Items.Where(i => i.ItemId == form.ItemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"С‚РѕРІР°СЂ ID:{form.ItemId}"
-                    : await _context.Categories.Where(c => c.CategoryId == form.CategoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"РєР°С‚РµРіРѕСЂС–СЏ ID:{form.CategoryId}";
-                var desc = $"РџСЂРёР·РЅР°С‡РµРЅРѕ Р·РЅРёР¶РєСѓ {form.Percent}% РЅР° '{target}' Р· {form.DateFrom:dd.MM.yyyy} РїРѕ {form.DateTo:dd.MM.yyyy}";
+                    ? await _context.Items.Where(i => i.ItemId == form.ItemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"товар ID:{form.ItemId}"
+                    : await _context.Categories.Where(c => c.CategoryId == form.CategoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"категорія ID:{form.CategoryId}";
+                var desc = $"Призначено знижку {form.Percent}% на '{target}' з {form.DateFrom:dd.MM.yyyy} по {form.DateTo:dd.MM.yyyy}";
                 await _eventLogsService.LogAsync("Create", "Discount", null, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -288,16 +288,16 @@ namespace TechnoMarkt.Areas.Manager.Catalog
             if (!ModelState.IsValid)
             {
                 string errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _discountsService.UpdateDiscountAsync(form);
             if (succeeded)
             {
                 string target = form.ItemId.HasValue
-                    ? await _context.Items.Where(i => i.ItemId == form.ItemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"С‚РѕРІР°СЂ ID:{form.ItemId}"
-                    : await _context.Categories.Where(c => c.CategoryId == form.CategoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"РєР°С‚РµРіРѕСЂС–СЏ ID:{form.CategoryId}";
-                var desc = $"РћРЅРѕРІР»РµРЅРѕ Р·РЅРёР¶РєСѓ (ID:{form.Id}): {form.Percent}% РЅР° '{target}', Р· {form.DateFrom:dd.MM.yyyy} РїРѕ {form.DateTo:dd.MM.yyyy}";
+                    ? await _context.Items.Where(i => i.ItemId == form.ItemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"товар ID:{form.ItemId}"
+                    : await _context.Categories.Where(c => c.CategoryId == form.CategoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"категорія ID:{form.CategoryId}";
+                var desc = $"Оновлено знижку (ID:{form.Id}): {form.Percent}% на '{target}', з {form.DateFrom:dd.MM.yyyy} по {form.DateTo:dd.MM.yyyy}";
                 await _eventLogsService.LogAsync("Update", "Discount", form.Id, desc);
             }
             return Ok(new { success = succeeded, message });
@@ -307,13 +307,13 @@ namespace TechnoMarkt.Areas.Manager.Catalog
         public async Task<IActionResult> RevokeDiscount([FromForm] int? itemId, [FromForm] int? categoryId)
         {
             string target = itemId.HasValue
-                ? await _context.Items.Where(i => i.ItemId == itemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"С‚РѕРІР°СЂ ID:{itemId}"
+                ? await _context.Items.Where(i => i.ItemId == itemId).Select(i => i.Name).FirstOrDefaultAsync() ?? $"товар ID:{itemId}"
                 : categoryId.HasValue
-                    ? await _context.Categories.Where(c => c.CategoryId == categoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"РєР°С‚РµРіРѕСЂС–СЏ ID:{categoryId}"
-                    : "вЂ”";
+                    ? await _context.Categories.Where(c => c.CategoryId == categoryId).Select(c => c.Name).FirstOrDefaultAsync() ?? $"категорія ID:{categoryId}"
+                    : "—";
             var (succeeded, message) = await _discountsService.RevokeDiscountAsync(itemId, categoryId);
             if (succeeded)
-                await _eventLogsService.LogAsync("Delete", "Discount", null, $"РЎРєР°СЃРѕРІР°РЅРѕ Р·РЅРёР¶РєСѓ РґР»СЏ '{target}'");
+                await _eventLogsService.LogAsync("Delete", "Discount", null, $"Скасовано знижку для '{target}'");
             return Ok(new { success = succeeded, message });
         }
 

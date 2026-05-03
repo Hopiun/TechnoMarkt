@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 namespace TechnoMarkt.Shared.Common.ViewModels.Tables
 {
     public class TableVM<TRow, TFilter> where TFilter : new()

@@ -63,24 +63,20 @@ namespace TechnoMarkt.Areas.Client.Orders
                 .FirstOrDefaultAsync(o => o.OrderId == orderId && o.ClientId == clientId);
 
             if (order == null)
-                return (false, $"Р—Р°РјРѕРІР»РµРЅРЅСЏ #{orderId} РЅРµ Р·РЅР°Р№РґРµРЅРѕ");
+                return (false, $"Замовлення #{orderId} не знайдено");
 
             if (order.Status == OrderStatus.Completed
              || order.Status == OrderStatus.Returned
              || order.Status == OrderStatus.Cancelled)
-                return (false, $"Р—Р°РјРѕРІР»РµРЅРЅСЏ #{orderId} РЅРµ РјРѕР¶Рµ Р±СѓС‚Рё СЃРєР°СЃРѕРІР°РЅРѕ Р·С– СЃС‚Р°С‚СѓСЃСѓ '{order.Status}'");
+                return (false, $"Замовлення #{orderId} не може бути скасовано зі статусу '{order.Status}'");
 
             order.Status = OrderStatus.Cancelled;
             await _context.SaveChangesAsync();
 
-            return (true, $"Р—Р°РјРѕРІР»РµРЅРЅСЏ #{orderId} СЃРєР°СЃРѕРІР°РЅРѕ");
+            return (true, $"Замовлення #{orderId} скасовано");
         }
     }
 }
-
-
-
-
 
 
 

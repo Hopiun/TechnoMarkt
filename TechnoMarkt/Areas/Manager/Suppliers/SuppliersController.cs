@@ -78,12 +78,12 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             (bool succeeded, string message) = await _suppliersService.AddSupplierAsync(form);
             if (succeeded)
-                await _eventLogsService.LogAsync("Create", "Supplier", null, $"Р”РѕРґР°РЅРѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°: '{form.Name}', РљРѕРЅС‚Р°РєС‚: {form.Contact ?? "вЂ”"}");
+                await _eventLogsService.LogAsync("Create", "Supplier", null, $"Додано постачальника: '{form.Name}', Контакт: {form.Contact ?? "—"}");
             return Ok(new { success = succeeded, message });
         }
 
@@ -94,12 +94,12 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             (bool succeeded, string message) = await _suppliersService.UpdateSupplierAsync(supplierId, form);
             if (succeeded)
-                await _eventLogsService.LogAsync("Update", "Supplier", supplierId, $"РћРЅРѕРІР»РµРЅРѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° (ID:{supplierId}): '{form.Name}', РљРѕРЅС‚Р°РєС‚: {form.Contact ?? "вЂ”"}");
+                await _eventLogsService.LogAsync("Update", "Supplier", supplierId, $"Оновлено постачальника (ID:{supplierId}): '{form.Name}', Контакт: {form.Contact ?? "—"}");
             return Ok(new { success = succeeded, message });
         }
 
@@ -109,14 +109,8 @@ namespace TechnoMarkt.Areas.Manager.Suppliers
             var supplier = await _context.Suppliers.FindAsync(supplierId);
             (bool succeeded, string message) = await _suppliersService.DeleteSupplierAsync(supplierId);
             if (succeeded)
-                await _eventLogsService.LogAsync("Delete", "Supplier", supplierId, $"Р’РёРґР°Р»РµРЅРѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°: '{supplier?.Name ?? "ID:" + supplierId}'");
+                await _eventLogsService.LogAsync("Delete", "Supplier", supplierId, $"Видалено постачальника: '{supplier?.Name ?? "ID:" + supplierId}'");
             return Ok(new { success = succeeded, message });
         }
     }
 }
-
-
-
-
-
-

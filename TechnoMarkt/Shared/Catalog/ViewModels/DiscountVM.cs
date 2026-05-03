@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 namespace TechnoMarkt.Shared.Catalog.ViewModels
 {
     public class DiscountVM

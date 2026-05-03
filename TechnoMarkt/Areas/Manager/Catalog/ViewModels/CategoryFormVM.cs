@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
+п»їusing Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using TechnoMarkt.Shared.Common.ViewModels.Forms;
 
@@ -8,12 +8,12 @@ namespace TechnoMarkt.Areas.Manager.Catalog.ViewModels
     {
         public int? Id { get; set; }
 
-        [Display(Name = "Назва категорії")]
-        [Required(ErrorMessage = "Назва обов'язкова")]
-        [StringLength(100, ErrorMessage = "Максимум 100 символів")]
+        [Display(Name = "РќР°Р·РІР° РєР°С‚РµРіРѕСЂС–С—")]
+        [Required(ErrorMessage = "РќР°Р·РІР° РѕР±РѕРІ'СЏР·РєРѕРІР°")]
+        [StringLength(100, ErrorMessage = "РњР°РєСЃРёРјСѓРј 100 СЃРёРјРІРѕР»С–РІ")]
         public string Name { get; set; } = null!;
 
-        [Display(Name = "Батьківська категорія")]
+        [Display(Name = "Р‘Р°С‚СЊРєС–РІСЃСЊРєР° РєР°С‚РµРіРѕСЂС–СЏ")]
         public int? ParentCategoryId { get; set; }
         public SelectList? ParentCategories { get; set; }
     }

@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Auth.ViewModels;
+﻿using TechnoMarkt.Shared.Auth.ViewModels;
 using System.Security.Claims;
 
 namespace TechnoMarkt.Controllers

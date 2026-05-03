@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using TechnoMarkt.Shared.Catalog.ViewModels;
 
 namespace TechnoMarkt.Areas.Manager.Catalog.ViewModels

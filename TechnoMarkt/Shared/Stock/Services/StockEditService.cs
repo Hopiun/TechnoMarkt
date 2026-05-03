@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Stock.Extensions;
+﻿using TechnoMarkt.Shared.Stock.Extensions;
 using TechnoMarkt.Models;
 using TechnoMarkt.Data;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 using TechnoMarkt.Shared.Common.ViewModels.Forms;
 using System.ComponentModel.DataAnnotations;
 

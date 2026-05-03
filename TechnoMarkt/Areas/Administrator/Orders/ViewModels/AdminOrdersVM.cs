@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 using TechnoMarkt.Shared.Orders.ViewModels.Tables;
 using TechnoMarkt.Shared.Stock.ViewModels.Tables;
 using TechnoMarkt.Shared.EventLogs.ViewModels.Tables;

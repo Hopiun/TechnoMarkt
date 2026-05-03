@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 using TechnoMarkt.Shared.Catalog.ViewModels;
 
 namespace TechnoMarkt.Extensions.Query

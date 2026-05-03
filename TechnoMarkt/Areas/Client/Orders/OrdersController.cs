@@ -75,7 +75,7 @@ namespace TechnoMarkt.Areas.Client.Orders
         {
             var (succeeded, notification) = await _ordersService.CancelOrderAsync(orderId, ClientId);
             if (succeeded)
-                await _eventLogsService.LogAsync("Update", "Order", orderId, $"РљР»С–С”РЅС‚ СЃРєР°СЃСѓРІР°РІ Р·Р°РјРѕРІР»РµРЅРЅСЏ #{orderId}");
+                await _eventLogsService.LogAsync("Update", "Order", orderId, $"Клієнт скасував замовлення #{orderId}");
             return Json(new { success = succeeded, message = notification });
         }
         

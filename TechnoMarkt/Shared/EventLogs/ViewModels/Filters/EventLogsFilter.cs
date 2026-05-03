@@ -1,4 +1,4 @@
-using TechnoMarkt.Models;
+﻿using TechnoMarkt.Models;
 namespace TechnoMarkt.Shared.EventLogs.ViewModels.Filters
 {
     public class EventLogsFilter

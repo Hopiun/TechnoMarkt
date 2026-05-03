@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Stock.Services;
+﻿using TechnoMarkt.Shared.Stock.Services;
 using TechnoMarkt.Shared.Stock.ViewModels.Tables;
 
 namespace TechnoMarkt.Areas.Operator.Warehouse

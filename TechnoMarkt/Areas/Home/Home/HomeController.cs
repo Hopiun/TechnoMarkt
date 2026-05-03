@@ -1,12 +1,11 @@
-using TechnoMarkt.Areas.Home.Home.ViewModels;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using TechnoMarkt.Models;
+using Microsoft.EntityFrameworkCore;
+using TechnoMarkt.Areas.Home.Home.ViewModels;
 using TechnoMarkt.Data;
 using TechnoMarkt.Interfaces;
-using TechnoMarkt.Shared.Stock.Services;
+using TechnoMarkt.Models;
 
 namespace TechnoMarkt.Areas.Home.Home
 {
@@ -28,7 +27,7 @@ namespace TechnoMarkt.Areas.Home.Home
         public async Task<IActionResult> Index()
         {
             var cities = await _context.Cities
-                .Where(c => _context.Stores.Any(s => s.CityId == c.РЎityId))
+                .Where(c => _context.Stores.Any(s => s.CityId == c.CityId))
                 .ToListAsync();
 
             int? selectedCityId = null;
@@ -44,7 +43,7 @@ namespace TechnoMarkt.Areas.Home.Home
             var model = new HomeViewModel
             {
                 Cities = new SelectList(
-                    cities.Select(c => new SelectListItem { Value = c.РЎityId.ToString(), Text = c.Name }),
+                    cities.Select(c => new SelectListItem { Value = c.CityId.ToString(), Text = c.Name }),
                     "Value", "Text"
                 ),
                 SelectedCityId = selectedCityId,
@@ -88,9 +87,9 @@ namespace TechnoMarkt.Areas.Home.Home
                     new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
 
                 var city = _context.Cities.Find(cityId);
-                var user = User.Identity?.Name ?? "Р’С–РґРІС–РґСѓРІР°С‡";
+                var user = User.Identity?.Name ?? "Відвідувач";
                 _eventLogsService.LogAsync("Update", "Store", store.StoreId,
-                    $"{user} РѕР±СЂР°РІ РјР°РіР°Р·РёРЅ: {store.Address}, РјС–СЃС‚Рѕ {city?.Name ?? "вЂ”" + cityId}");
+                    $"{user} обрав магазин: {store.Address}, місто {city?.Name ?? "—" + cityId}");
             }
             return LocalRedirect(returnUrl);
         }
@@ -102,9 +101,9 @@ namespace TechnoMarkt.Areas.Home.Home
                 new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
 
             var store = _context.Stores.Find(storeId);
-            var user = User.Identity?.Name ?? "Р’С–РґРІС–РґСѓРІР°С‡";
+            var user = User.Identity?.Name ?? "Відвідувач";
             _eventLogsService.LogAsync("Update", "Store", storeId,
-                $"{user} Р·РјС–РЅРёРІ РјР°РіР°Р·РёРЅ (ID:{storeId})");
+                $"{user} змінив магазин (ID:{storeId})");
 
             return Ok();
         }

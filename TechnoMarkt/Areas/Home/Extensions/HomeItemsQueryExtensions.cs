@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Stock.Extensions;
+﻿using TechnoMarkt.Shared.Stock.Extensions;
 using TechnoMarkt.Models;
 
 namespace TechnoMarkt.Areas.Home.Extensions

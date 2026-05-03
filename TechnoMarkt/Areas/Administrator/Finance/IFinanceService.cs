@@ -1,4 +1,4 @@
-using TechnoMarkt.Areas.Administrator.Finance.ViewModels;
+﻿using TechnoMarkt.Areas.Administrator.Finance.ViewModels;
 using TechnoMarkt.Models;
 using TechnoMarkt.Shared.Common.ViewModels.Filters;
 using TechnoMarkt.Shared.EventLogs.ViewModels.Filters;

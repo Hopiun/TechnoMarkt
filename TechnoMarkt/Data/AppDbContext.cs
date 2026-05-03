@@ -66,7 +66,7 @@ public partial class AppDbContext : IdentityDbContext<AppUser, IdentityRole<int>
 
         modelBuilder.Entity<City>(entity =>
         {
-            entity.HasKey(e => e.СityId).HasName("PK__City__61D698BE5CCEFA82");
+            entity.HasKey(e => e.CityId).HasName("PK__City__61D698BE5CCEFA82");
         });
 
         modelBuilder.Entity<Client>(entity =>

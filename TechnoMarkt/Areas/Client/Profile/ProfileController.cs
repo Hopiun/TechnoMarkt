@@ -63,7 +63,7 @@ namespace TechnoMarkt.Areas.Client.Profile
                 return View(model);
             }
 
-            await _eventLogsService.LogAsync("Update", "Client", ClientId, $"РћРЅРѕРІР»РµРЅРѕ РїСЂРѕС„С–Р»СЊ: {model.FirstName} {model.LastName}");
+            await _eventLogsService.LogAsync("Update", "Client", ClientId, $"Оновлено профіль: {model.FirstName} {model.LastName}");
             TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(Index));
         }
@@ -89,7 +89,7 @@ namespace TechnoMarkt.Areas.Client.Profile
                 return View(model);
             }
 
-            await _eventLogsService.LogAsync("Update", "Client", ClientId, $"Р—РјС–РЅРµРЅРѕ email РЅР° {model.NewEmail}");
+            await _eventLogsService.LogAsync("Update", "Client", ClientId, $"Змінено email на {model.NewEmail}");
             TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(Index));
         }
@@ -115,7 +115,7 @@ namespace TechnoMarkt.Areas.Client.Profile
                 return View(model);
             }
 
-            await _eventLogsService.LogAsync("Update", "Client", ClientId, "Р—РјС–РЅРµРЅРѕ РїР°СЂРѕР»СЊ");
+            await _eventLogsService.LogAsync("Update", "Client", ClientId, "Змінено пароль");
             TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(Index));
         }
@@ -132,7 +132,7 @@ namespace TechnoMarkt.Areas.Client.Profile
                 return RedirectToAction(nameof(Index));
             }
 
-            await _eventLogsService.LogAsync("Delete", "Client", ClientId, "Р’РёРґР°Р»РµРЅРѕ Р°РєР°СѓРЅС‚ РєР»С–С”РЅС‚Р°");
+            await _eventLogsService.LogAsync("Delete", "Client", ClientId, "Видалено акаунт клієнта");
             TempData["SuccessMessage"] = result.Message;
             return RedirectToAction("Index", "Home", new { area = "Home" });
         }

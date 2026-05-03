@@ -233,12 +233,12 @@ namespace TechnoMarkt.Migrations
 
             modelBuilder.Entity("TechnoMarkt.Models.City", b =>
                 {
-                    b.Property<int>("СityId")
+                    b.Property<int>("CityId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasColumnName("сity_id");
+                        .HasColumnName("city_id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("СityId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CityId"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -252,7 +252,7 @@ namespace TechnoMarkt.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("region");
 
-                    b.HasKey("СityId")
+                    b.HasKey("CityId")
                         .HasName("PK__City__61D698BE5CCEFA82");
 
                     b.ToTable("City");

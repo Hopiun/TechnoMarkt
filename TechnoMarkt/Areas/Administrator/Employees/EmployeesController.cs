@@ -89,19 +89,19 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             if (form.Password != form.ConfirmPassword)
             {
-                return BadRequest(new { success = false, message = "РџР°СЂРѕР»С– РЅРµ СЃРїС–РІРїР°РґР°СЋС‚СЊ" });
+                return BadRequest(new { success = false, message = "Паролі не співпадають" });
             }
 
             var (succeeded, message) = await _employeeService.AddEmployeeAsync(StoreId, form);
             if (succeeded)
             {
                 await _eventLogsService.LogAsync("Create", "Employee", null,
-                    $"Р”РѕРґР°РЅРѕ РїСЂР°С†С–РІРЅРёРєР°: {form.FirstName} {form.LastName}, Р РѕР»СЊ: {form.Role}, РњР°РіР°Р·РёРЅ ID: {StoreId}, Р—Р°СЂРїР»Р°С‚Р°: {form.Salary:N0}");
+                    $"Додано працівника: {form.FirstName} {form.LastName}, Роль: {form.Role}, Магазин ID: {StoreId}, Зарплата: {form.Salary:N0}");
             }
             return Ok(new { success = succeeded, message });
         }
@@ -112,14 +112,14 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _employeeService.UpdateEmployeeAsync(form.Id!.Value, form);
             if (succeeded)
             {
                 await _eventLogsService.LogAsync("Update", "Employee", form.Id.Value,
-                    $"РћРЅРѕРІР»РµРЅРѕ РґР°РЅС– РїСЂР°С†С–РІРЅРёРєР° (ID:{form.Id}): {form.FirstName} {form.LastName}, Р РѕР»СЊ: {form.Role}, РЎС‚Р°С‚СѓСЃ: {form.Status}, Р—Р°СЂРїР»Р°С‚Р°: {form.Salary:N0}");
+                    $"Оновлено дані працівника (ID:{form.Id}): {form.FirstName} {form.LastName}, Роль: {form.Role}, Статус: {form.Status}, Зарплата: {form.Salary:N0}");
             }
             return Ok(new { success = succeeded, message });
         }
@@ -138,14 +138,14 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(new { success = false, message = $"РџРѕРјРёР»РєР° РІР°Р»С–РґР°С†С–С—: {errors}" });
+                return BadRequest(new { success = false, message = $"Помилка валідації: {errors}" });
             }
 
             var (succeeded, message) = await _employeeService.UpdateStoreAsync(StoreId, form);
             if (succeeded)
             {
                 await _eventLogsService.LogAsync("Update", "Store", StoreId,
-                    $"РћРЅРѕРІР»РµРЅРѕ РґР°РЅС– РјР°РіР°Р·РёРЅСѓ (ID:{StoreId}): {form.Address}");
+                    $"Оновлено дані магазину (ID:{StoreId}): {form.Address}");
             }
             return Ok(new { success = succeeded, message });
         }
@@ -158,7 +158,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             if (succeeded)
             {
                 await _eventLogsService.LogAsync("Delete", "Employee", employeeId,
-                    $"Р”РµР°РєС‚РёРІРѕРІР°РЅРѕ РїСЂР°С†С–РІРЅРёРєР°: {employee?.FirstName} {employee?.LastName} (ID:{employeeId})");
+                    $"Деактивовано працівника: {employee?.FirstName} {employee?.LastName} (ID:{employeeId})");
             }
             return Ok(new { success = succeeded, message });
         }
@@ -170,7 +170,7 @@ namespace TechnoMarkt.Areas.Administrator.Employees
             if (succeeded)
             {
                 await _eventLogsService.LogAsync("Update", "Employee", employeeId,
-                    $"Р РµР°РєС‚РёРІРѕРІР°РЅРѕ РїСЂР°С†С–РІРЅРёРєР° (ID:{employeeId})");
+                    $"Реактивовано працівника (ID:{employeeId})");
             }
             return Ok(new { success = succeeded, message });
         }

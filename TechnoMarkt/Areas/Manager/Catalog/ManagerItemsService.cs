@@ -1,4 +1,4 @@
-using TechnoMarkt.Shared.Orders.Extensions;
+﻿using TechnoMarkt.Shared.Orders.Extensions;
 using TechnoMarkt.Shared.Stock.Extensions;
 using TechnoMarkt.Areas.Manager.Catalog.ViewModels;
 using Microsoft.EntityFrameworkCore;
